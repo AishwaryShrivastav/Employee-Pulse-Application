@@ -9,12 +9,14 @@ export class Survey extends Document {
   @Prop({ required: true })
   description: string;
 
-  @Prop([{
-    text: { type: String, required: true },
-    type: { type: String, required: true, enum: ['text', 'rating', 'choice'] },
-    options: [String],
-    required: { type: Boolean, default: true }
-  }])
+  @Prop([
+    {
+      text: { type: String, required: true },
+      type: { type: String, required: true, enum: ['text', 'rating', 'choice'] },
+      options: [String],
+      required: { type: Boolean, default: true },
+    },
+  ])
   questions: Array<{
     text: string;
     type: string;
@@ -26,4 +28,4 @@ export class Survey extends Document {
   isActive: boolean;
 }
 
-export const SurveySchema = SchemaFactory.createForClass(Survey); 
+export const SurveySchema = SchemaFactory.createForClass(Survey);

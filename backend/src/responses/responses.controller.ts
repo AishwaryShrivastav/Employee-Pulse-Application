@@ -1,15 +1,28 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Req, Res, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+  Res,
+  Param,
+  BadRequestException,
+} from '@nestjs/common';
 import { Response as ExpressResponse } from 'express';
 import { ResponsesService } from './responses.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
-import { Request } from 'express';
+import { CreateResponseDto } from './dto/create-response.dto';
 
-interface RequestWithUser extends Request {
+interface RequestWithUser {
   user: {
     userId: string;
+    email: string;
+    role: UserRole;
   };
 }
 
@@ -19,11 +32,29 @@ export class ResponsesController {
   constructor(private readonly responsesService: ResponsesService) {}
 
   @Post()
-  create(@Body() createResponseDto: any, @Req() req: RequestWithUser) {
-    return this.responsesService.create({
-      ...createResponseDto,
-      userId: req.user.userId,
-    });
+  async create(@Body() createResponseDto: CreateResponseDto, @Req() req: RequestWithUser) {
+    if (!req.user?.userId) {
+      console.error('Auth error - user object:', req.user);
+      throw new BadRequestException('User not authenticated');
+    }
+
+    try {
+      const response = await this.responsesService.create({
+        ...createResponseDto,
+        userId: req.user.userId,
+      });
+      
+      return {
+        message: 'Survey response submitted successfully',
+        response
+      };
+    } catch (error) {
+      console.error('Error submitting survey response:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(error.message || 'Failed to submit survey response');
+    }
   }
 
   @Get('export')
@@ -38,6 +69,9 @@ export class ResponsesController {
 
   @Get('my')
   findMyResponses(@Req() req: RequestWithUser) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('User not authenticated');
+    }
     return this.responsesService.findByUserId(req.user.userId);
   }
 
@@ -50,4 +84,4 @@ export class ResponsesController {
   findOne(@Param('id') id: string) {
     return this.responsesService.findOne(id);
   }
-} 
+}

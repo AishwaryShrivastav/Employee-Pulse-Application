@@ -45,21 +45,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Fetch user data using the stored token
   const fetchUser = async () => {
     try {
       const userData = await authAPI.getCurrentUser();
       setUser(userData);
     } catch (err) {
-      // Clear invalid token and redirect to login
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle user login
   const login = async (email: string, password: string) => {
     try {
       const { access_token, user: userData } = await authAPI.login(email, password);
@@ -67,11 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       return userData;
     } catch (err) {
-      throw new Error('Invalid email or password');
+      localStorage.removeItem('token');
+      setUser(null);
+      throw err;
     }
   };
 
-  // Handle user registration
   const register = async (name: string, email: string, password: string) => {
     try {
       const { access_token, user: userData } = await authAPI.register(name, email, password);
@@ -79,15 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       return userData;
     } catch (err) {
-      throw new Error('Registration failed');
+      localStorage.removeItem('token');
+      setUser(null);
+      throw err;
     }
   };
 
-  // Handle user logout
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    window.location.href = '/login';
   };
 
   return (
@@ -95,4 +93,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

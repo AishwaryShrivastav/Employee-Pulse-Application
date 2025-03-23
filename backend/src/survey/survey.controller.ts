@@ -28,4 +28,4 @@ export class SurveyController {
   async seedDefaultSurvey() {
     return this.surveyService.createDefaultSurvey();
   }
-} 
+}

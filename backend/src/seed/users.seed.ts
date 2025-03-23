@@ -6,9 +6,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersSeedService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async seed() {
     // Check if users already exist
@@ -61,8 +59,8 @@ export class UsersSeedService {
         this.userModel.create({
           ...employee,
           password: employeePassword,
-        })
-      )
+        }),
+      ),
     );
 
     const allUsers = [adminUser, hrUser, ...createdEmployees];
@@ -70,7 +68,7 @@ export class UsersSeedService {
     console.log('Admin credentials: admin@example.com / admin123');
     console.log('HR credentials: hr@example.com / hr123');
     console.log('Employee credentials: john@example.com / employee123');
-    
+
     return allUsers;
   }
-} 
+}

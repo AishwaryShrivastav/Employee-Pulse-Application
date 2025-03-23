@@ -1,13 +1,17 @@
-FROM node:20-slim
+FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
+# Copy the rest of the application
 COPY . .
 
-EXPOSE 3000
+# Build the application
+RUN npm run build
 
+# Start the application
 CMD ["npm", "start"] 

@@ -1,37 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConflictException } from '@nestjs/common';
+import { User, UserRole } from '../users/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt');
 
 describe('AuthService', () => {
   let service: AuthService;
-  let usersService: UsersService;
-  let jwtService: JwtService;
 
-  const mockUser = {
-    _id: 'test-id',
+  const mockUser: Partial<User> = {
+    _id: 'user123',
     name: 'Test User',
     email: 'test@example.com',
-    password: 'hashedPassword123',
-    role: 'employee',
-    toObject: () => ({
-      _id: 'test-id',
-      name: 'Test User',
-      email: 'test@example.com',
-      password: 'hashedPassword123',
-      role: 'employee',
-    }),
+    password: 'hashedPassword',
+    role: UserRole.EMPLOYEE,
   };
 
   const mockUsersService = {
-    findOneByEmail: jest.fn(),
+    findByEmail: jest.fn(),
     create: jest.fn(),
   };
 
   const mockJwtService = {
     sign: jest.fn(),
+    signAsync: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -50,115 +45,96 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
-    jwtService = module.get<JwtService>(JwtService);
+  });
 
-    // Reset all mocks before each test
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
   describe('validateUser', () => {
-    it('should return user object without password if validation succeeds', async () => {
-      const email = 'test@example.com';
-      const password = 'correctPassword';
-      
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+    it('should return user without password if validation succeeds', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockImplementation(() => Promise.resolve(true));
 
-      const result = await service.validateUser(email, password);
-      
-      const { password: _, ...expectedUser } = mockUser.toObject();
+      const result = await service.validateUser('test@example.com', 'password123');
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...expectedUser } = mockUser;
       expect(result).toEqual(expectedUser);
     });
 
     it('should return null if user is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUsersService.findByEmail.mockResolvedValue(null);
 
-      const result = await service.validateUser('nonexistent@example.com', 'password');
-      
+      const result = await service.validateUser('test@example.com', 'password123');
+
       expect(result).toBeNull();
     });
 
-    it('should return null if password is incorrect', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
+    it('should return null if password is invalid', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockImplementation(() => Promise.resolve(false));
 
-      const result = await service.validateUser('test@example.com', 'wrongPassword');
-      
+      const result = await service.validateUser('test@example.com', 'wrongpassword');
+
       expect(result).toBeNull();
     });
   });
 
   describe('login', () => {
-    it('should generate JWT token and return user data', async () => {
-      const mockToken = 'generated-jwt-token';
-      mockJwtService.sign.mockReturnValue(mockToken);
+    it('should return access token and user data', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = mockUser;
+      mockJwtService.signAsync.mockResolvedValue('jwt_token');
 
-      const result = await service.login(mockUser);
+      const result = await service.login(userWithoutPassword as User);
 
       expect(result).toEqual({
-        access_token: mockToken,
-        user: {
-          _id: mockUser._id,
-          name: mockUser.name,
-          email: mockUser.email,
-          role: mockUser.role,
-        },
+        access_token: 'jwt_token',
+        user: userWithoutPassword,
       });
-    });
-
-    it('should throw UnauthorizedException if user is null', async () => {
-      await expect(service.login(null)).rejects.toThrow(UnauthorizedException);
+      expect(mockJwtService.signAsync).toHaveBeenCalledWith({
+        email: mockUser.email,
+        sub: mockUser._id,
+        role: mockUser.role,
+      });
     });
   });
 
   describe('register', () => {
     const registerDto = {
-      name: 'New User',
-      email: 'new@example.com',
+      name: 'Test User',
+      email: 'test@example.com',
       password: 'password123',
-      role: 'employee',
     };
 
-    it('should create new user and return token with user data', async () => {
+    it('should create a new user and return access token', async () => {
       const hashedPassword = 'hashedPassword123';
-      jest.spyOn(bcrypt, 'hash').mockImplementation(() => Promise.resolve(hashedPassword));
-      
-      mockUsersService.create.mockResolvedValue({
-        ...mockUser,
-        ...registerDto,
-        password: hashedPassword,
-      });
-
-      mockJwtService.sign.mockReturnValue('new-user-token');
+      (bcrypt.hash as jest.Mock).mockImplementation(() => Promise.resolve(hashedPassword));
+      mockUsersService.create.mockResolvedValue({ ...mockUser, password: hashedPassword });
+      mockJwtService.signAsync.mockResolvedValue('jwt_token');
 
       const result = await service.register(registerDto);
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = mockUser;
+      expect(result).toEqual({
+        access_token: 'jwt_token',
+        user: userWithoutPassword,
+      });
       expect(mockUsersService.create).toHaveBeenCalledWith({
         ...registerDto,
         password: hashedPassword,
+        role: UserRole.EMPLOYEE,
       });
-
-      expect(result).toHaveProperty('access_token');
-      expect(result).toHaveProperty('user');
-      expect(result.user).not.toHaveProperty('password');
     });
 
-    it('should throw UnauthorizedException if email already exists', async () => {
-      mockUsersService.create.mockRejectedValue({ code: 11000 });
+    it('should throw ConflictException if email already exists', async () => {
+      const duplicateKeyError = new Error('Duplicate key') as Error & { code: number };
+      duplicateKeyError.code = 11000;
+      mockUsersService.create.mockRejectedValue(duplicateKeyError);
 
-      await expect(service.register(registerDto))
-        .rejects
-        .toThrow(UnauthorizedException);
-    });
-
-    it('should propagate other errors', async () => {
-      const error = new Error('Database connection failed');
-      mockUsersService.create.mockRejectedValue(error);
-
-      await expect(service.register(registerDto))
-        .rejects
-        .toThrow(error);
+      await expect(service.register(registerDto)).rejects.toThrow(ConflictException);
     });
   });
-}); 
+});

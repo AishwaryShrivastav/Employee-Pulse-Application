@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { SurveyResponse } from '../types';
@@ -14,11 +14,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    fetchResponses();
-  }, [page]);
-
-  const fetchResponses = async () => {
+  const fetchResponses = useCallback(async () => {
     try {
       const data = await surveyAPI.getAllResponses(page);
       setResponses(data.responses);
@@ -28,7 +24,11 @@ export const AdminDashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    fetchResponses();
+  }, [fetchResponses]);
 
   const handleLogout = () => {
     logout();
@@ -65,16 +65,11 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
-                Admin Dashboard
-              </h1>
+              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">Welcome, {user?.name}</span>
-              <button
-                onClick={handleLogout}
-                className="btn btn-secondary"
-              >
+              <button onClick={handleLogout} className="btn btn-secondary">
                 Logout
               </button>
             </div>
@@ -83,20 +78,13 @@ export const AdminDashboardPage: React.FC = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">{error}</div>}
 
         <div className="mb-6 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             Showing {responses.length} of {total} responses
           </div>
-          <button
-            onClick={handleExport}
-            className="btn btn-primary"
-          >
+          <button onClick={handleExport} className="btn btn-primary">
             Export Responses
           </button>
         </div>
@@ -107,14 +95,14 @@ export const AdminDashboardPage: React.FC = () => {
 
         <div className="mt-6 flex justify-center space-x-2">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
             className="btn btn-secondary"
           >
             Previous
           </button>
           <button
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => setPage(p => p + 1)}
             disabled={responses.length < 10}
             className="btn btn-secondary"
           >
@@ -124,4 +112,4 @@ export const AdminDashboardPage: React.FC = () => {
       </main>
     </div>
   );
-}; 
+};

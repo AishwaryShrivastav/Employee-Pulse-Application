@@ -44,14 +44,14 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSubmit }) => {
       case QuestionType.RATING:
         return (
           <div className="flex space-x-2">
-            {[1, 2, 3, 4, 5].map((rating) => (
+            {[1, 2, 3, 4, 5].map(rating => (
               <label key={rating} className="flex items-center space-x-2">
                 <input
                   type="radio"
                   name={`question-${index}`}
                   value={rating}
                   checked={answers[index] === rating}
-                  onChange={(e) => handleAnswerChange(index, parseInt(e.target.value))}
+                  onChange={e => handleAnswerChange(index, parseInt(e.target.value))}
                   className="form-radio"
                   required={question.required}
                 />
@@ -71,7 +71,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSubmit }) => {
                   name={`question-${index}`}
                   value={option}
                   checked={answers[index] === option}
-                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  onChange={e => handleAnswerChange(index, e.target.value)}
                   className="form-radio"
                   required={question.required}
                 />
@@ -84,8 +84,8 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSubmit }) => {
       case QuestionType.TEXT:
         return (
           <textarea
-            value={answers[index] as string || ''}
-            onChange={(e) => handleAnswerChange(index, e.target.value)}
+            value={(answers[index] as string) || ''}
+            onChange={e => handleAnswerChange(index, e.target.value)}
             className="form-textarea w-full"
             rows={4}
             required={question.required}
@@ -111,17 +111,11 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSubmit }) => {
         ))}
       </div>
 
-      {error && (
-        <div className="text-red-500 text-sm">{error}</div>
-      )}
+      {error && <div className="text-red-500 text-sm">{error}</div>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="btn btn-primary w-full"
-      >
+      <button type="submit" disabled={loading} className="btn btn-primary w-full">
         {loading ? 'Submitting...' : 'Submit Survey'}
       </button>
     </form>
   );
-}; 
+};

@@ -1,13 +1,23 @@
 {
   "name": "employee-pulse-application",
   "version": "1.0.0",
+  "private": true,
   "description": "Employee Pulse Application - Full Stack",
   "scripts": {
     "start": "docker-compose up",
     "start:build": "docker-compose up --build",
     "stop": "docker-compose down",
     "clean": "docker-compose down -v",
-    "seed": "docker-compose exec backend npm run seed"
+    "seed": "docker-compose exec backend npm run seed",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:fix": "npm run lint:fix:backend && npm run lint:fix:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:fix:backend": "cd backend && npm run lint:fix",
+    "lint:fix:frontend": "cd frontend && npm run lint:fix",
+    "format": "npm run format:backend && npm run format:frontend",
+    "format:backend": "cd backend && npm run format",
+    "format:frontend": "cd frontend && npm run format"
   },
   "author": "",
   "license": "ISC"

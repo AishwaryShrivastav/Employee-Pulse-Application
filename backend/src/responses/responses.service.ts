@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Response, ResponseDocument } from './schemas/response.schema';
 import { CreateResponseDto } from './dto/create-response.dto';
 
@@ -8,9 +8,35 @@ import { CreateResponseDto } from './dto/create-response.dto';
 export class ResponsesService {
   constructor(@InjectModel(Response.name) private responseModel: Model<ResponseDocument>) {}
 
-  async create(createResponseDto: CreateResponseDto): Promise<ResponseDocument> {
-    const createdResponse = new this.responseModel(createResponseDto);
-    return createdResponse.save();
+  async create(createResponseDto: CreateResponseDto & { userId: string }): Promise<ResponseDocument> {
+    try {
+      // Validate userId and surveyId are valid ObjectIds
+      if (!Types.ObjectId.isValid(createResponseDto.userId)) {
+        throw new BadRequestException('Invalid userId');
+      }
+      if (!Types.ObjectId.isValid(createResponseDto.surveyId)) {
+        throw new BadRequestException('Invalid surveyId');
+      }
+
+      // Create response with proper ObjectIds
+      const createdResponse = new this.responseModel({
+        ...createResponseDto,
+        userId: new Types.ObjectId(createResponseDto.userId),
+        surveyId: new Types.ObjectId(createResponseDto.surveyId),
+        submittedAt: new Date()
+      });
+
+      return await createdResponse.save();
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      if (error.name === 'ValidationError') {
+        throw new BadRequestException(error.message);
+      }
+      console.error('Error creating response:', error);
+      throw new BadRequestException('Failed to create survey response');
+    }
   }
 
   async findAll(page: number = 1, limit: number = 10) {
@@ -40,19 +66,16 @@ export class ResponsesService {
       .populate('userId', 'name email')
       .populate('surveyId', 'title questions')
       .exec();
-    
+
     if (!response) {
       throw new NotFoundException(`Response with ID ${id} not found`);
     }
-    
+
     return response;
   }
 
   async findByUserId(userId: string): Promise<ResponseDocument[]> {
-    return this.responseModel
-      .find({ userId })
-      .populate('surveyId', 'title')
-      .exec();
+    return this.responseModel.find({ userId }).populate('surveyId', 'title').exec();
   }
 
   async exportToCSV(): Promise<string> {
@@ -90,9 +113,6 @@ export class ResponsesService {
       ];
     });
 
-    return [
-      headers.join(','),
-      ...rows.map(row => row.join(',')),
-    ].join('\n');
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
-} 
+}

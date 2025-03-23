@@ -69,7 +69,7 @@ export class SurveyService {
         {
           text: 'How likely are you to recommend working here to others?',
           type: QuestionType.RATING,
-        }
+        },
       ],
     };
 
@@ -79,4 +79,4 @@ export class SurveyService {
     }
     return existingSurvey;
   }
-} 
+}

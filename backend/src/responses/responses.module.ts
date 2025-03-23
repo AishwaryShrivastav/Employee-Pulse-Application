@@ -5,11 +5,9 @@ import { ResponsesController } from './responses.controller';
 import { Response, ResponseSchema } from './schemas/response.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Response.name, schema: ResponseSchema }])
-  ],
+  imports: [MongooseModule.forFeature([{ name: Response.name, schema: ResponseSchema }])],
   controllers: [ResponsesController],
   providers: [ResponsesService],
   exports: [ResponsesService],
 })
-export class ResponsesModule {} 
+export class ResponsesModule {}

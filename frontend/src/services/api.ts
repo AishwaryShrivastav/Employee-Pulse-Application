@@ -1,5 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
-import { Survey, SurveyResponse, Question } from '../types';
+import type {
+  Survey,
+  SurveyResponse,
+  Question,
+  User,
+  LoginCredentials,
+  RegisterCredentials,
+} from '../types';
 
 // API configuration
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
@@ -13,7 +20,7 @@ const api: AxiosInstance = axios.create({
 });
 
 // Add authentication token to requests
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -23,14 +30,14 @@ api.interceptors.request.use((config) => {
 
 // Handle API errors
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Authentication API endpoints
@@ -60,11 +67,7 @@ export const surveyAPI = {
   },
 
   // Create a new survey (admin only)
-  createSurvey: async (survey: {
-    title: string;
-    description: string;
-    questions: Question[];
-  }) => {
+  createSurvey: async (survey: { title: string; description: string; questions: Question[] }) => {
     const response = await api.post('/survey', survey);
     return response.data;
   },
@@ -76,7 +79,7 @@ export const surveyAPI = {
   },
 
   // Submit a survey response
-  submitResponse: async (surveyId: string, answers: any[]) => {
+  submitResponse: async (surveyId: string, answers: Array<{ questionIndex: number; value: string | number }>) => {
     const response = await api.post('/responses', {
       surveyId,
       answers,
@@ -105,4 +108,9 @@ export const surveyAPI = {
     });
     return response.data;
   },
-}; 
+};
+
+export const exportSurveyResponses = async (format: string): Promise<string> => {
+  const response = await api.get(`/responses/export?format=${format}`);
+  return response.data;
+};

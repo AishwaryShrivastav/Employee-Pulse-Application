@@ -18,4 +18,4 @@ import { ResponsesSeedService } from './responses.seed';
   providers: [UsersSeedService, SurveysSeedService, ResponsesSeedService],
   exports: [UsersSeedService, SurveysSeedService, ResponsesSeedService],
 })
-export class SeedModule {} 
+export class SeedModule {}

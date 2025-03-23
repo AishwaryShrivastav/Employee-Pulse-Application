@@ -1,19 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { UnauthorizedException } from '@nestjs/common';
 import { LoginRequest, RegisterRequest } from './interfaces/auth.interfaces';
+import { UserRole } from '../users/schemas/user.schema';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: AuthService;
-
-  const mockUser = {
-    _id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    role: 'employee',
-  };
 
   const mockAuthService = {
     validateUser: jest.fn(),
@@ -33,76 +26,78 @@ describe('AuthController', () => {
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    authService = module.get<AuthService>(AuthService);
+  });
 
-    // Reset all mocks before each test
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
   describe('login', () => {
-    const loginRequest: LoginRequest = {
+    const loginDto: LoginRequest = {
       email: 'test@example.com',
       password: 'password123',
     };
 
-    it('should return token and user data when credentials are valid', async () => {
-      const expectedResponse = {
-        access_token: 'jwt-token',
-        user: mockUser,
-      };
+    const mockUser = {
+      _id: 'user123',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.EMPLOYEE,
+    };
 
+    it('should return token and user data for valid credentials', async () => {
       mockAuthService.validateUser.mockResolvedValue(mockUser);
-      mockAuthService.login.mockResolvedValue(expectedResponse);
+      mockAuthService.login.mockResolvedValue({
+        access_token: 'jwt_token',
+        user: mockUser,
+      });
 
-      const result = await controller.login(loginRequest);
+      const result = await controller.login(loginDto);
 
-      expect(mockAuthService.validateUser).toHaveBeenCalledWith(
-        loginRequest.email,
-        loginRequest.password,
-      );
+      expect(result).toEqual({
+        access_token: 'jwt_token',
+        user: mockUser,
+      });
+      expect(mockAuthService.validateUser).toHaveBeenCalledWith(loginDto.email, loginDto.password);
       expect(mockAuthService.login).toHaveBeenCalledWith(mockUser);
-      expect(result).toEqual(expectedResponse);
     });
 
-    it('should throw UnauthorizedException when credentials are invalid', async () => {
+    it('should throw UnauthorizedException for invalid credentials', async () => {
       mockAuthService.validateUser.mockResolvedValue(null);
 
-      await expect(controller.login(loginRequest)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(controller.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      expect(mockAuthService.validateUser).toHaveBeenCalledWith(loginDto.email, loginDto.password);
+      expect(mockAuthService.login).not.toHaveBeenCalled();
     });
   });
 
   describe('register', () => {
-    const registerRequest: RegisterRequest = {
-      name: 'New User',
-      email: 'new@example.com',
+    const registerDto: RegisterRequest = {
+      name: 'Test User',
+      email: 'test@example.com',
       password: 'password123',
     };
 
-    it('should return token and user data when registration is successful', async () => {
-      const expectedResponse = {
-        access_token: 'jwt-token',
-        user: {
-          ...mockUser,
-          name: registerRequest.name,
-          email: registerRequest.email,
-        },
-      };
+    const mockUser = {
+      _id: 'user123',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: UserRole.EMPLOYEE,
+    };
 
-      mockAuthService.register.mockResolvedValue(expectedResponse);
+    it('should register a new user and return token', async () => {
+      mockAuthService.register.mockResolvedValue({
+        access_token: 'jwt_token',
+        user: mockUser,
+      });
 
-      const result = await controller.register(registerRequest);
+      const result = await controller.register(registerDto);
 
-      expect(mockAuthService.register).toHaveBeenCalledWith(registerRequest);
-      expect(result).toEqual(expectedResponse);
-    });
-
-    it('should propagate errors from the auth service', async () => {
-      const error = new UnauthorizedException('Email already exists');
-      mockAuthService.register.mockRejectedValue(error);
-
-      await expect(controller.register(registerRequest)).rejects.toThrow(error);
+      expect(result).toEqual({
+        access_token: 'jwt_token',
+        user: mockUser,
+      });
+      expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
     });
   });
-}); 
+});

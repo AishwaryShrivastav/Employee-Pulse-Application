@@ -11,10 +11,12 @@ export class Response {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Survey', required: true })
   surveyId: Survey;
 
-  @Prop([{
-    questionIndex: { type: Number, required: true },
-    value: { type: MongooseSchema.Types.Mixed, required: true }
-  }])
+  @Prop([
+    {
+      questionIndex: { type: Number, required: true },
+      value: { type: MongooseSchema.Types.Mixed, required: true },
+    },
+  ])
   answers: Array<{
     questionIndex: number;
     value: string | number;
@@ -25,4 +27,4 @@ export class Response {
 }
 
 export type ResponseDocument = Response & Document;
-export const ResponseSchema = SchemaFactory.createForClass(Response); 
+export const ResponseSchema = SchemaFactory.createForClass(Response);

@@ -30,4 +30,4 @@ export class CreateSurveyDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionDto)
   questions: QuestionDto[];
-} 
+}

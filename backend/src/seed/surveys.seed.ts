@@ -5,9 +5,7 @@ import { Survey } from '../survey/schemas/survey.schema';
 
 @Injectable()
 export class SurveysSeedService {
-  constructor(
-    @InjectModel(Survey.name) private surveyModel: Model<Survey>,
-  ) {}
+  constructor(@InjectModel(Survey.name) private surveyModel: Model<Survey>) {}
 
   async seed() {
     // Check if surveys already exist
@@ -111,4 +109,4 @@ export class SurveysSeedService {
     console.log('Created surveys:', createdSurveys.length);
     return createdSurveys;
   }
-} 
+}

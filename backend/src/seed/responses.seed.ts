@@ -16,15 +16,21 @@ interface Question {
 export class ResponsesSeedService {
   constructor(
     @InjectModel(Response.name) private responseModel: Model<Response>,
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Survey.name) private surveyModel: Model<Survey>,
   ) {}
 
-  async seed(users: User[], surveys: Survey[]) {
+  async seed(): Promise<void> {
     // Check if responses already exist
     const existingResponses = await this.responseModel.find().exec();
     if (existingResponses.length > 0) {
       console.log('Responses already exist, skipping seed...');
       return;
     }
+
+    // Get users and surveys
+    const users = await this.userModel.find().exec();
+    const surveys = await this.surveyModel.find().exec();
 
     const responses: any[] = [];
     const employeeUsers = users.filter(user => user.role === 'employee');
@@ -35,7 +41,7 @@ export class ResponsesSeedService {
         // Generate random answers based on question type
         const answers = survey.questions.map((question: Question, index: number) => {
           let value: string | number;
-          
+
           switch (question.type) {
             case 'rating':
               value = Math.floor(Math.random() * 5) + 1; // Random rating 1-5
@@ -72,4 +78,4 @@ export class ResponsesSeedService {
     const createdResponses = await this.responseModel.insertMany(responses);
     console.log('Created responses:', createdResponses.length);
   }
-} 
+}

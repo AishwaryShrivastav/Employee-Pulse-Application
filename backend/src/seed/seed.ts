@@ -1,33 +1,36 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
-import { SeedModule } from './seed.module';
 import { UsersSeedService } from './users.seed';
 import { SurveysSeedService } from './surveys.seed';
 import { ResponsesSeedService } from './responses.seed';
 
-async function bootstrap() {
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const seedModule = app.select(SeedModule);
-  const usersSeedService = seedModule.get(UsersSeedService);
-  const surveysSeedService = seedModule.get(SurveysSeedService);
-  const responsesSeedService = seedModule.get(ResponsesSeedService);
-  
+async function seed() {
+  const app = await NestFactory.create(AppModule);
+
   try {
-    // Create users first
-    const users = await usersSeedService.seed();
-    
-    // Create surveys
-    const surveys = await surveysSeedService.seed();
-    
-    // Create responses
-    await responsesSeedService.seed(users, surveys);
-    
-    console.log('Seeding completed successfully!');
+    console.log('Starting database seeding...');
+
+    // Get services
+    const usersSeedService = app.get(UsersSeedService);
+    const surveysSeedService = app.get(SurveysSeedService);
+    const responsesSeedService = app.get(ResponsesSeedService);
+
+    // Seed in sequence to maintain data consistency
+    await usersSeedService.seed();
+    await surveysSeedService.seed();
+    await responsesSeedService.seed();
+
+    console.log('Database seeding completed successfully');
   } catch (error) {
-    console.error('Seeding failed:', error);
+    console.error('Error seeding database:', error);
+    throw error;
   } finally {
     await app.close();
   }
 }
 
-bootstrap(); 
+// Handle promise rejection properly
+seed().catch(err => {
+  console.error('Failed to seed database:', err);
+  process.exit(1);
+});
