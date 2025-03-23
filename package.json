@@ -1,12 +1,13 @@
 {
-  "name": "employee-pulse-survey",
+  "name": "employee-pulse-application",
   "version": "1.0.0",
-  "description": "Employee Pulse Survey Application",
+  "description": "Employee Pulse Application - Full Stack",
   "scripts": {
-    "start:backend": "cd backend && npm run start:dev",
-    "start:frontend": "cd frontend && npm run dev",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd backend && npm run build && cd ../frontend && npm run build"
+    "start": "docker-compose up",
+    "start:build": "docker-compose up --build",
+    "stop": "docker-compose down",
+    "clean": "docker-compose down -v",
+    "seed": "docker-compose exec backend npm run seed"
   },
   "author": "",
   "license": "ISC"

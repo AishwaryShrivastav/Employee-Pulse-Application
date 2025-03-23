@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { Survey, SurveyResponse, Question } from '../types';
 
 // API configuration
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 // Create axios instance with default config
 const api: AxiosInstance = axios.create({
