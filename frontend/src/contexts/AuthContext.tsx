@@ -6,7 +6,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'employee' | 'admin' | 'hr';
+  role: 'employee' | 'admin';
 }
 
 // Define the AuthContext type with all required methods
@@ -14,7 +14,6 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => void;
 }
 
@@ -70,26 +69,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    try {
-      const { access_token, user: userData } = await authAPI.register(name, email, password);
-      localStorage.setItem('token', access_token);
-      setUser(userData);
-      return userData;
-    } catch (err) {
-      localStorage.removeItem('token');
-      setUser(null);
-      throw err;
-    }
-  };
-
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -9,6 +9,7 @@ import {
   Res,
   Param,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Response as ExpressResponse } from 'express';
 import { ResponsesService } from './responses.service';
@@ -17,6 +18,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { CreateResponseDto } from './dto/create-response.dto';
+import { Types } from 'mongoose';
 
 interface RequestWithUser {
   user: {
@@ -57,6 +59,19 @@ export class ResponsesController {
     }
   }
 
+  @Get('status')
+  async getSurveyStatus(@Req() req: RequestWithUser) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('User not authenticated');
+    }
+    try {
+      return await this.responsesService.getSurveyStatusForUser(req.user.userId);
+    } catch (error) {
+      console.error('Error getting survey status:', error);
+      throw new BadRequestException('Failed to get survey status');
+    }
+  }
+
   @Get('export')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -68,20 +83,61 @@ export class ResponsesController {
   }
 
   @Get('my')
-  findMyResponses(@Req() req: RequestWithUser) {
+  async findMyResponses(@Req() req: RequestWithUser) {
     if (!req.user?.userId) {
       throw new BadRequestException('User not authenticated');
     }
-    return this.responsesService.findByUserId(req.user.userId);
+    try {
+      return await this.responsesService.findByUserId(req.user.userId);
+    } catch (error) {
+      console.error('Error finding user responses:', error);
+      throw new BadRequestException('Failed to fetch responses');
+    }
   }
 
   @Get()
-  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    return this.responsesService.findAll(page, limit);
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async findAll(
+    @Query('page') page: number = 1, 
+    @Query('limit') limit: number = 10,
+    @Query('surveyId') surveyId?: string
+  ) {
+    try {
+      // If surveyId is provided, get responses for that survey
+      if (surveyId) {
+        console.log('Finding responses for survey:', surveyId);
+        if (!Types.ObjectId.isValid(surveyId)) {
+          throw new BadRequestException('Invalid survey ID');
+        }
+        return await this.responsesService.findBySurveyId(surveyId);
+      }
+      
+      // Otherwise, get all responses with pagination
+      return await this.responsesService.findAll(page, limit);
+    } catch (error) {
+      console.error('Error finding responses:', error);
+      throw new BadRequestException(error.message || 'Failed to fetch responses');
+    }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.responsesService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid response ID');
+    }
+    try {
+      const response = await this.responsesService.findOne(id);
+      if (!response) {
+        throw new NotFoundException('Response not found');
+      }
+      return response;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error finding response:', error);
+      throw new BadRequestException('Failed to fetch response');
+    }
   }
 }

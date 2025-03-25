@@ -1,5 +1,5 @@
 import React, { useState, FormEvent } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -7,23 +7,18 @@ import {
   TextField,
   Button,
   Typography,
-  Link,
   InputAdornment,
   IconButton,
+  Alert,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 
-interface AuthFormProps {
-  mode: 'login' | 'register';
-}
-
-export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
+export const AuthForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
   });
@@ -34,10 +29,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (mode === 'register' && !formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -46,8 +37,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long';
     }
 
     setErrors(newErrors);
@@ -61,18 +50,14 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
     setLoading(true);
 
     try {
-      if (mode === 'login') {
-        await login(formData.email, formData.password);
-        toast.success('Login successful!');
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 0);
+      const user = await login(formData.email, formData.password);
+      toast.success('Login successful!');
+      
+      // Redirect based on user role
+      if (user.role === 'admin') {
+        navigate('/admin', { replace: true });
       } else {
-        await register(formData.name, formData.email, formData.password);
-        toast.success('Registration successful!');
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 0);
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       console.error('Auth error:', err);
@@ -104,25 +89,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" align="center" gutterBottom>
-            {mode === 'login' ? 'Sign in' : 'Create account'}
+            Employee Pulse Login
           </Typography>
           
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Use the credentials provided by your administrator to sign in.
+          </Alert>
+
           <form onSubmit={handleSubmit}>
             <Box sx={{ mt: 3 }}>
-              {mode === 'register' && (
-                <TextField
-                  fullWidth
-                  label="Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  error={!!errors.name}
-                  helperText={errors.name}
-                  disabled={loading}
-                  sx={{ mb: 2 }}
-                />
-              )}
-              
               <TextField
                 fullWidth
                 label="Email address"
@@ -164,27 +139,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
                 disabled={loading}
                 sx={{ mt: 3, mb: 2 }}
               >
-                {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
+                {loading ? 'Please wait...' : 'Sign in'}
               </Button>
             </Box>
           </form>
 
-          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-            {mode === 'login' ? (
-              <>
-                Don't have an account?{' '}
-                <Link component={RouterLink} to="/register">
-                  Sign up
-                </Link>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <Link component={RouterLink} to="/login">
-                  Sign in
-                </Link>
-              </>
-            )}
+          <Typography variant="body2" align="center" color="textSecondary" sx={{ mt: 2 }}>
+            Contact your administrator if you need help signing in.
           </Typography>
         </CardContent>
       </Card>

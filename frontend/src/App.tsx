@@ -8,12 +8,14 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
 import { theme } from './theme';
 import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { SurveyManagementPage } from './pages/SurveyManagementPage';
+import { SurveyView } from './pages/SurveyView';
+import { ResponseHistoryPage } from './pages/ResponseHistoryPage';
 import { PrivateRoute } from './components/PrivateRoute';
 import { Box } from '@mui/material';
+import { SurveyResponsesPage } from './pages/SurveyResponsesPage';
 
 export const App: React.FC = () => {
   return (
@@ -23,8 +25,8 @@ export const App: React.FC = () => {
         <Router>
           <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
             <Routes>
+              <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
               <Route
                 path="/dashboard"
                 element={
@@ -42,14 +44,37 @@ export const App: React.FC = () => {
                 }
               />
               <Route
-                path="/surveys"
+                path="/survey-management"
                 element={
                   <PrivateRoute roles={['admin']}>
                     <SurveyManagementPage />
                   </PrivateRoute>
                 }
               />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route
+                path="/surveys/:id"
+                element={
+                  <PrivateRoute>
+                    <SurveyView />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/surveys/:id/responses"
+                element={
+                  <PrivateRoute roles={['admin']}>
+                    <SurveyResponsesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/response-history"
+                element={
+                  <PrivateRoute>
+                    <ResponseHistoryPage />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </Box>
         </Router>

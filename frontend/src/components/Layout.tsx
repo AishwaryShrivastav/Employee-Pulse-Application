@@ -66,10 +66,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {
             text: 'Surveys',
             icon: <Assessment />,
-            path: '/surveys',
+            path: '/survey-management',
           },
         ]
-      : []),
+      : [
+          {
+            text: 'Response History',
+            icon: <Assessment />,
+            path: '/response-history',
+          },
+        ]),
   ];
 
   const renderDrawer = (

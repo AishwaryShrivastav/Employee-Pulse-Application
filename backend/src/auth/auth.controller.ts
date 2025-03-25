@@ -1,15 +1,19 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UnauthorizedException,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginRequest, RegisterRequest, LoginResponse } from './interfaces/auth.interfaces';
-import { ApiTags, ApiOperation, ApiResponse, ApiProperty } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiProperty, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole } from '../users/schemas/user.schema';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 // Swagger response class
 class LoginResponseDto implements LoginResponse {
@@ -72,5 +76,21 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async register(@Body() registerDto: RegisterRequest): Promise<LoginResponse> {
     return this.authService.register(registerDto);
+  }
+
+  /**
+   * Retrieves the current authenticated user
+   * @param req - Request with the user from JWT token
+   * @returns Current user information
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current authenticated user' })
+  @ApiResponse({ status: 200, description: 'Current user information' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getCurrentUser(@Request() req) {
+    console.log('GET /auth/me endpoint called with user:', req.user?.userId);
+    return req.user;
   }
 }

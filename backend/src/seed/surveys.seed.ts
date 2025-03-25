@@ -47,6 +47,8 @@ export class SurveysSeedService {
           },
         ],
         isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       },
       {
         title: 'Team Collaboration Survey',
@@ -74,6 +76,8 @@ export class SurveysSeedService {
           },
         ],
         isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
       },
       {
         title: 'Career Development Survey',
@@ -102,6 +106,102 @@ export class SurveysSeedService {
           },
         ],
         isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+      },
+      {
+        title: 'Work Environment Survey',
+        description: 'Help us improve your workspace and environment',
+        questions: [
+          {
+            text: 'How comfortable is your workspace?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What office amenities would you like to see?',
+            type: 'text',
+            required: false,
+          },
+          {
+            text: 'How satisfied are you with the office location?',
+            type: 'rating',
+            required: true,
+          },
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
+      },
+      {
+        title: 'Technology Tools Survey',
+        description: 'Help us understand your technology needs',
+        questions: [
+          {
+            text: 'How satisfied are you with your current tools?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What software would help improve your productivity?',
+            type: 'text',
+            required: false,
+          },
+          {
+            text: 'How would you rate IT support?',
+            type: 'rating',
+            required: true,
+          },
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      },
+      // Submitted surveys
+      {
+        title: 'Previous Engagement Survey',
+        description: 'Past survey for testing completed state',
+        questions: [
+          {
+            text: 'How engaged do you feel at work?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What aspects of your work do you find most engaging?',
+            type: 'text',
+            required: true,
+          },
+        ],
+        isActive: true,
+        status: 'Submitted',
+        dueDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        submittedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), // Submitted 8 days ago
+      },
+      {
+        title: 'Q1 Feedback Survey',
+        description: 'Quarterly feedback survey',
+        questions: [
+          {
+            text: 'How would you rate this quarter?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What were your key achievements?',
+            type: 'text',
+            required: true,
+          },
+          {
+            text: 'What challenges did you face?',
+            type: 'text',
+            required: true,
+          },
+        ],
+        isActive: true,
+        status: 'Submitted',
+        dueDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
+        submittedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // Submitted 15 days ago
       },
     ];
 

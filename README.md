@@ -1,6 +1,104 @@
 # Employee Pulse Application
 
-A full-stack application for managing employee surveys and feedback. Built with NestJS, React, and MongoDB.
+A full-stack application for managing employee surveys and feedback.
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- MongoDB (v6 or higher)
+- npm or yarn
+- Docker and Docker Compose (for containerized deployment)
+
+## Development Setup
+
+### Option 1: Local Development (Faster for Testing)
+
+1. **Install Dependencies**
+   ```bash
+   npm run install:all
+   ```
+
+2. **Setup MongoDB**
+   - Create a data directory for MongoDB:
+     ```bash
+     mkdir -p data/db
+     ```
+   - Start MongoDB (in a separate terminal):
+     ```bash
+     npm run start:mongodb
+     ```
+   - Or use your existing MongoDB installation (make sure it's running on mongodb://localhost:27017)
+
+3. **Start the Application**
+   
+   a. Full Development Stack:
+   ```bash
+   npm run dev
+   ```
+   This will start MongoDB, backend, and frontend concurrently.
+
+   b. Quick Development (if MongoDB is already running):
+   ```bash
+   npm run dev:quick
+   ```
+   This will only start the backend and frontend.
+
+4. **Seed the Database**
+   ```bash
+   npm run seed:db
+   ```
+
+### Option 2: Docker Development
+
+1. **Start with Docker Compose**
+   ```bash
+   npm start
+   ```
+   Or to rebuild containers:
+   ```bash
+   npm run start:build
+   ```
+
+## Access the Application
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- API Documentation: http://localhost:5000/api
+
+## Default Login Credentials
+
+1. **Admin Account**
+   - Email: admin@example.com
+   - Password: admin123
+
+2. **Employee Account**
+   - Email: john@example.com
+   - Password: employee123
+
+## Project Structure
+
+```
+employee-pulse-application/
+├── frontend/          # React frontend
+├── backend/           # NestJS backend
+├── data/             # MongoDB data directory
+└── docker-compose.yml # Docker composition
+```
+
+## Environment Variables
+
+The application uses the following environment variables:
+
+### Backend (.env)
+```
+MONGODB_URI=mongodb://localhost:27017/employee-pulse
+JWT_SECRET=your-secret-key
+```
+
+### Frontend (.env)
+```
+REACT_APP_API_URL=http://localhost:5000
+```
 
 ## Features
 
@@ -31,52 +129,6 @@ A full-stack application for managing employee surveys and feedback. Built with 
 - Docker and Docker Compose
 - MongoDB
 - Node.js
-
-## Quick Start
-
-### Prerequisites
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-
-### Running with Docker
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd employee-pulse-application
-```
-
-2. Start the application:
-```bash
-npm run start:build
-```
-
-This will:
-- Build and start all containers
-- Set up the MongoDB database
-- Start the backend on port 3001
-- Start the frontend on port 3000
-
-3. Seed the database (optional):
-```bash
-npm run seed
-```
-
-### Test Credentials
-
-After seeding, you can use these accounts:
-
-1. Admin User:
-   - Email: admin@example.com
-   - Password: admin123
-
-2. HR User:
-   - Email: hr@example.com
-   - Password: hr123
-
-3. Employee User:
-   - Email: john@example.com
-   - Password: employee123
 
 ## Development
 
@@ -130,28 +182,6 @@ ESLint is configured with:
 - Prettier integration
 - Strict type checking
 - Common code style rules
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── src/
-│   │   ├── auth/         # Authentication module
-│   │   ├── users/        # User management
-│   │   ├── survey/       # Survey management
-│   │   ├── responses/    # Survey responses
-│   │   └── seed/         # Database seeding
-│   └── test/
-├── frontend/
-│   ├── src/
-│   │   ├── components/   # Reusable components
-│   │   ├── pages/       # Page components
-│   │   ├── services/    # API services
-│   │   └── contexts/    # React contexts
-│   └── public/
-└── docker-compose.yml
-```
 
 ## Contributing
 

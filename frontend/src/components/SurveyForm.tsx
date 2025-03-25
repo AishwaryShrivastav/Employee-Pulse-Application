@@ -1,121 +1,193 @@
 import React, { useState } from 'react';
-import { Survey, Question, QuestionType } from '../types';
-import { surveyAPI } from '../services/api';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  IconButton,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
+} from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Question, QuestionType } from '../types';
 
-interface SurveyFormProps {
-  survey: Survey;
-  onSubmit: () => void;
+interface Survey {
+  id?: string;
+  title: string;
+  description: string;
+  questions: Question[];
 }
 
-export const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSubmit }) => {
-  const [answers, setAnswers] = useState<Record<number, string | number>>({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface SurveyFormProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (survey: Survey) => void;
+  initialData?: Survey;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      const formattedAnswers = Object.entries(answers).map(([index, value]) => ({
-        questionIndex: parseInt(index),
-        value,
-      }));
-
-      await surveyAPI.submitResponse(survey._id, formattedAnswers);
-      onSubmit();
-    } catch (err) {
-      setError('Failed to submit survey. Please try again.');
-    } finally {
-      setLoading(false);
+export const SurveyForm: React.FC<SurveyFormProps> = ({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+}) => {
+  const [survey, setSurvey] = useState<Survey>(
+    initialData || {
+      title: '',
+      description: '',
+      questions: [],
     }
+  );
+
+  const handleAddQuestion = () => {
+    setSurvey({
+      ...survey,
+      questions: [
+        ...survey.questions,
+        { text: '', type: QuestionType.TEXT, options: [] },
+      ],
+    });
   };
 
-  const handleAnswerChange = (questionIndex: number, value: string | number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionIndex]: value,
-    }));
+  const handleRemoveQuestion = (index: number) => {
+    const newQuestions = [...survey.questions];
+    newQuestions.splice(index, 1);
+    setSurvey({ ...survey, questions: newQuestions });
   };
 
-  const renderQuestion = (question: Question, index: number) => {
-    switch (question.type) {
-      case QuestionType.RATING:
-        return (
-          <div className="flex space-x-2">
-            {[1, 2, 3, 4, 5].map(rating => (
-              <label key={rating} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name={`question-${index}`}
-                  value={rating}
-                  checked={answers[index] === rating}
-                  onChange={e => handleAnswerChange(index, parseInt(e.target.value))}
-                  className="form-radio"
-                  required={question.required}
-                />
-                <span className="text-sm text-gray-700">{rating}</span>
-              </label>
-            ))}
-          </div>
-        );
+  const handleQuestionChange = (index: number, field: keyof Question, value: any) => {
+    const newQuestions = [...survey.questions];
+    newQuestions[index] = {
+      ...newQuestions[index],
+      [field]: value,
+      ...(field === 'type' && value !== QuestionType.CHOICE ? { options: [] } : {}),
+    };
+    setSurvey({ ...survey, questions: newQuestions });
+  };
 
-      case QuestionType.CHOICE:
-        return (
-          <div className="space-y-2">
-            {question.options?.map((option: string) => (
-              <label key={option} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name={`question-${index}`}
-                  value={option}
-                  checked={answers[index] === option}
-                  onChange={e => handleAnswerChange(index, e.target.value)}
-                  className="form-radio"
-                  required={question.required}
-                />
-                <span className="text-sm text-gray-700">{option}</span>
-              </label>
-            ))}
-          </div>
-        );
+  const handleOptionsChange = (index: number, optionsText: string) => {
+    const options = optionsText.split(',').map(opt => opt.trim());
+    const newQuestions = [...survey.questions];
+    newQuestions[index] = {
+      ...newQuestions[index],
+      options,
+    };
+    setSurvey({ ...survey, questions: newQuestions });
+  };
 
-      case QuestionType.TEXT:
-        return (
-          <textarea
-            value={(answers[index] as string) || ''}
-            onChange={e => handleAnswerChange(index, e.target.value)}
-            className="form-textarea w-full"
-            rows={4}
-            required={question.required}
-          />
-        );
-
-      default:
-        return null;
-    }
+  const handleSubmit = () => {
+    onSubmit(survey);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-6">
-        {survey.questions.map((question, index) => (
-          <div key={index} className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              {question.text}
-              {question.required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {renderQuestion(question, index)}
-          </div>
-        ))}
-      </div>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        {initialData ? 'Edit Survey' : 'Create New Survey'}
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <TextField
+            label="Survey Title"
+            value={survey.title}
+            onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Description"
+            value={survey.description}
+            onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
+            fullWidth
+            multiline
+            rows={2}
+          />
 
-      {error && <div className="text-red-500 text-sm">{error}</div>}
-
-      <button type="submit" disabled={loading} className="btn btn-primary w-full">
-        {loading ? 'Submitting...' : 'Submit Survey'}
-      </button>
-    </form>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Questions
+            </Typography>
+            {survey.questions.map((question, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  mb: 3,
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    label={`Question ${index + 1}`}
+                    value={question.text}
+                    onChange={(e) =>
+                      handleQuestionChange(index, 'text', e.target.value)
+                    }
+                    fullWidth
+                    required
+                  />
+                  <FormControl sx={{ minWidth: 120 }}>
+                    <InputLabel>Type</InputLabel>
+                    <Select
+                      value={question.type}
+                      label="Type"
+                      onChange={(e) =>
+                        handleQuestionChange(index, 'type', e.target.value)
+                      }
+                    >
+                      <MenuItem value={QuestionType.TEXT}>Text</MenuItem>
+                      <MenuItem value={QuestionType.RATING}>Rating</MenuItem>
+                      <MenuItem value={QuestionType.CHOICE}>Multiple Choice</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <IconButton
+                    onClick={() => handleRemoveQuestion(index)}
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+                {question.type === QuestionType.CHOICE && (
+                  <TextField
+                    label="Options (comma-separated)"
+                    value={question.options?.join(', ') || ''}
+                    onChange={(e) => handleOptionsChange(index, e.target.value)}
+                    fullWidth
+                    helperText="Enter options separated by commas"
+                  />
+                )}
+              </Box>
+            ))}
+            <Button
+              startIcon={<AddIcon />}
+              onClick={handleAddQuestion}
+              variant="outlined"
+              sx={{ mt: 1 }}
+            >
+              Add Question
+            </Button>
+          </Box>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          disabled={!survey.title || survey.questions.length === 0}
+        >
+          {initialData ? 'Update' : 'Create'} Survey
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };

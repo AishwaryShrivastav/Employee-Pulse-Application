@@ -1,79 +1,102 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Box, Grid, Container, Typography, CircularProgress, Alert } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { Survey, SurveyResponse } from '../types';
+import { Survey } from '../types';
 import { surveyAPI } from '../services/api';
-import { SurveyForm } from '../components/SurveyForm';
-import { ResponseList } from '../components/ResponseList';
+import { SurveyCard } from '../components/SurveyCard';
+import { Layout } from '../components/Layout';
+
+const mapSurveyData = (survey: any, statusData: any[]) => ({
+  id: survey._id,
+  title: survey.title,
+  description: survey.description,
+  createdAt: survey.createdAt,
+  status: statusData.find((s: any) => s.surveyId === survey._id)?.submitted ? 'Submitted' : 'Pending',
+  submittedAt: statusData.find((s: any) => s.surveyId === survey._id)?.submittedAt || null,
+  questionCount: survey.questions?.length || 0,
+  isActive: survey.isActive,
+  dueDate: survey.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+});
 
 export const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [surveys, setSurveys] = useState<Survey[]>([]);
-  const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [surveysData, statusData] = await Promise.all([
+          surveyAPI.getSurveys(),
+          surveyAPI.getSurveyStatus(),
+        ]);
+
+        const mappedSurveys = surveysData
+          .filter((survey: any) => survey.isActive)
+          .map((survey: any) => mapSurveyData(survey, statusData));
+
+        setSurveys(mappedSurveys);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load surveys. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const [surveysData, responsesData] = await Promise.all([
-        surveyAPI.getSurveys(),
-        surveyAPI.getMyResponses(),
-      ]);
-      setSurveys(surveysData);
-      setResponses(responsesData);
-    } catch (err) {
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
+  const handleStartSurvey = (surveyId: string) => {
+    navigate(`/surveys/${surveyId}`);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const handleSurveySubmit = async () => {
-    await fetchData();
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (loading) {
+    return (
+      <Layout>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Layout>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">Employee Pulse Survey</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Welcome, {user?.name}</span>
-              <button onClick={handleLogout} className="btn btn-secondary">
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <Layout>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Available Surveys
+        </Typography>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="space-y-8">
-          {surveys.map(survey => (
-            <div key={survey._id} className="card">
-              <SurveyForm survey={survey} onSubmit={handleSurveySubmit} />
-            </div>
-          ))}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-          <ResponseList responses={responses} />
-        </div>
-      </main>
-    </div>
+        <Grid container spacing={3}>
+          {surveys.length > 0 ? (
+            surveys.map((survey) => (
+              <Grid item xs={12} sm={6} md={4} key={survey.id}>
+                <SurveyCard
+                  survey={survey}
+                  onStart={() => handleStartSurvey(survey.id)}
+                />
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Alert severity="info">
+                No surveys are currently available.
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
+      </Container>
+    </Layout>
   );
 };

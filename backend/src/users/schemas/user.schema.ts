@@ -3,8 +3,7 @@ import { Document } from 'mongoose';
 
 export enum UserRole {
   EMPLOYEE = 'employee',
-  ADMIN = 'admin',
-  HR = 'hr',
+  ADMIN = 'admin'
 }
 
 @Schema({ timestamps: true })

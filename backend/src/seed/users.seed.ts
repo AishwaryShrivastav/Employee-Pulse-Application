@@ -16,22 +16,13 @@ export class UsersSeedService {
       return existingUsers;
     }
 
-    // Create admin user
+    // Create admin user (combined Admin & HR role)
     const adminPassword = await bcrypt.hash('admin123', 10);
     const adminUser = await this.userModel.create({
-      name: 'Admin User',
+      name: 'Admin & HR Manager',
       email: 'admin@example.com',
       password: adminPassword,
       role: 'admin',
-    });
-
-    // Create HR user
-    const hrPassword = await bcrypt.hash('hr123', 10);
-    const hrUser = await this.userModel.create({
-      name: 'HR Manager',
-      email: 'hr@example.com',
-      password: hrPassword,
-      role: 'hr',
     });
 
     // Create regular employees
@@ -63,10 +54,9 @@ export class UsersSeedService {
       ),
     );
 
-    const allUsers = [adminUser, hrUser, ...createdEmployees];
+    const allUsers = [adminUser, ...createdEmployees];
     console.log('Seed data created successfully!');
-    console.log('Admin credentials: admin@example.com / admin123');
-    console.log('HR credentials: hr@example.com / hr123');
+    console.log('Admin & HR credentials: admin@example.com / admin123');
     console.log('Employee credentials: john@example.com / employee123');
 
     return allUsers;

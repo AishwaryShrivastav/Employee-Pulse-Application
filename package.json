@@ -2,8 +2,15 @@
   "name": "employee-pulse-application",
   "version": "1.0.0",
   "private": true,
-  "description": "Employee Pulse Application - Full Stack",
+  "description": "Employee Pulse Application - Local Development",
   "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "start:mongodb": "mongod --dbpath ./data/db",
+    "start:backend": "cd backend && npm run start:dev",
+    "start:frontend": "cd frontend && npm start",
+    "seed:db": "cd backend && npm run seed",
+    "dev": "concurrently \"npm run start:mongodb\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "dev:quick": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start": "docker-compose up",
     "start:build": "docker-compose up --build",
     "stop": "docker-compose down",
@@ -20,5 +27,8 @@
     "format:frontend": "cd frontend && npm run format"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 } 

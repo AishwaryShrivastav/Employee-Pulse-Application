@@ -30,11 +30,17 @@ export interface Question {
 
 export interface Survey {
   _id: string;
+  id: string;
   title: string;
   description: string;
   questions: Question[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+  status: 'Pending' | 'Submitted';
+  submittedAt: string | null;
+  questionCount: number;
+  isActive: boolean;
+  dueDate: string;
 }
 
 export interface SurveyResponse {
@@ -47,6 +53,7 @@ export interface SurveyResponse {
   surveyId: {
     _id: string;
     title: string;
+    questions?: Question[];
   };
   answers: Array<{
     questionIndex: number;
