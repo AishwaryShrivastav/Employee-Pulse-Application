@@ -1,3 +1,15 @@
+/**
+ * SurveyView Component
+ * 
+ * This component displays an interactive survey form for users to complete.
+ * It manages the flow between questions, validates responses, and submits the completed survey.
+ * Features include:
+ * - Single-question display with navigation controls
+ * - Support for different question types (rating, text, choice)
+ * - Progress tracking
+ * - Form validation
+ * - Error handling
+ */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -22,43 +34,58 @@ import { NavigateNext, NavigateBefore } from '@mui/icons-material';
 import { Layout } from '../components/Layout';
 import { surveyAPI } from '../services/api';
 
+/**
+ * Question interface
+ * Defines the structure of a survey question
+ */
 interface Question {
-  id: string;
-  index: number;
-  text: string;
-  type: 'rating' | 'text' | 'choice';
-  options: string[];
-  required: boolean;
+  id: string;                             // Unique identifier for the question
+  index: number;                          // Position of question in the survey
+  text: string;                           // The question text
+  type: 'rating' | 'text' | 'choice';     // Question format type
+  options: string[];                      // Available options for choice/rating questions
+  required: boolean;                      // Whether an answer is mandatory
 }
 
+/**
+ * Survey interface
+ * Defines the structure of a survey
+ */
 interface Survey {
-  id: string;
-  title: string;
-  description: string;
-  totalQuestions: number;
-  questions: Question[];
+  id: string;                // Unique identifier for the survey
+  title: string;             // Survey title
+  description: string;       // Survey description
+  totalQuestions: number;    // Total number of questions
+  questions: Question[];     // Array of questions in the survey
 }
 
 export const SurveyView: React.FC = () => {
+  // Get survey ID from URL parameters
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [survey, setSurvey] = useState<Survey | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  
+  // State management
+  const [survey, setSurvey] = useState<Survey | null>(null);               // Current survey data
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);     // Index of currently displayed question
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});  // User's answers keyed by question ID
+  const [loading, setLoading] = useState(true);                            // Loading state
+  const [error, setError] = useState<string | null>(null);                 // Error messages
+  const [submitting, setSubmitting] = useState(false);                     // Submission in progress state
 
+  // Fetch survey data on component mount or when ID changes
   useEffect(() => {
     fetchSurvey();
   }, [id]);
 
+  /**
+   * Fetches survey data from the API and initializes the answers state
+   */
   const fetchSurvey = async () => {
     try {
       setLoading(true);
       const data = await surveyAPI.getSurvey(id!);
       setSurvey(data);
-      // Initialize answers object
+      // Initialize answers object with empty values for each question
       const initialAnswers: Record<string, string | string[]> = {};
       data.questions.forEach((q: Question) => {
         initialAnswers[q.id] = q.type === 'choice' ? [] : '';
@@ -72,6 +99,9 @@ export const SurveyView: React.FC = () => {
     }
   };
 
+  /**
+   * Handles changes for single-choice questions (radio buttons)
+   */
   const handleSingleChoiceChange = (questionId: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setAnswers(prev => ({
       ...prev,
@@ -79,6 +109,9 @@ export const SurveyView: React.FC = () => {
     }));
   };
 
+  /**
+   * Handles changes for text input questions
+   */
   const handleTextChange = (questionId: string, value: string) => {
     setAnswers(prev => ({
       ...prev,
@@ -86,6 +119,10 @@ export const SurveyView: React.FC = () => {
     }));
   };
 
+  /**
+   * Handles changes for multiple-choice questions (checkboxes)
+   * Toggles the selected option in the answer array
+   */
   const handleMultipleChoiceChange = (questionId: string, option: string) => {
     setAnswers(prev => {
       const currentAnswers = (prev[questionId] as string[]) || [];
@@ -99,6 +136,10 @@ export const SurveyView: React.FC = () => {
     });
   };
 
+  /**
+   * Validates all answers in the survey
+   * Ensures required questions have answers
+   */
   const validateAnswers = (): boolean => {
     if (!survey) return false;
     
@@ -113,6 +154,10 @@ export const SurveyView: React.FC = () => {
     });
   };
 
+  /**
+   * Checks if the current question has been answered
+   * Used to validate before allowing navigation to next question
+   */
   const isCurrentQuestionAnswered = (): boolean => {
     if (!survey) return false;
     const currentQuestion = survey.questions[currentQuestionIndex];
@@ -127,6 +172,10 @@ export const SurveyView: React.FC = () => {
     return true;
   };
 
+  /**
+   * Handles navigation to the next question
+   * Validates the current question before proceeding
+   */
   const handleNext = () => {
     if (!isCurrentQuestionAnswered()) {
       setError('Please answer this question before proceeding.');
@@ -138,12 +187,19 @@ export const SurveyView: React.FC = () => {
     }
   };
 
+  /**
+   * Handles navigation to the previous question
+   */
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
+  /**
+   * Submits the completed survey to the API
+   * Formats answers and navigates to dashboard on success
+   */
   const handleSubmit = async () => {
     if (!survey) return;
 
@@ -156,6 +212,7 @@ export const SurveyView: React.FC = () => {
       setSubmitting(true);
       setError(null);
       
+      // Format answers for API submission
       const formattedAnswers = Object.entries(answers)
         .filter(([_, value]) => {
           if (Array.isArray(value)) {
@@ -182,6 +239,7 @@ export const SurveyView: React.FC = () => {
     }
   };
 
+  // Show loading state
   if (loading) {
     return (
       <Layout>
@@ -192,6 +250,7 @@ export const SurveyView: React.FC = () => {
     );
   }
 
+  // Show error if survey not found
   if (!survey) {
     return (
       <Layout>
@@ -202,6 +261,7 @@ export const SurveyView: React.FC = () => {
     );
   }
 
+  // Calculate current question and progress
   const currentQuestion = survey.questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / survey.totalQuestions) * 100;
 

@@ -1,32 +1,40 @@
+# Docker Compose configuration for Employee Pulse Application
+# Uses version 3.8 of the Docker Compose specification
 version: '3.8'
 
+# Define services that make up the application
 services:
+  # MongoDB database service
   mongodb:
-    image: mongo:latest
+    image: mongo:latest    # Use the latest MongoDB image from Docker Hub
     ports:
-      - "27017:27017"
+      - "27017:27017"      # Map container port 27017 to host port 27017
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data:/data/db    # Persist MongoDB data in a named volume
 
+  # Backend NestJS API service
   backend:
-    build: ./backend
+    build: ./backend       # Build from Dockerfile in the backend directory
     ports:
-      - "3001:3001"
+      - "3001:3001"        # Map container port 3001 to host port 3001
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/employee-pulse
-      - JWT_SECRET=your_jwt_secret_key
-      - PORT=3001
+      # Environment variables for the backend service
+      - MONGODB_URI=mongodb://mongodb:27017/employee-pulse  # MongoDB connection string (uses service name 'mongodb')
+      - JWT_SECRET=your_jwt_secret_key                     # Secret key for JWT token generation
+      - PORT=3001                                         # Port on which the backend server listens
     depends_on:
-      - mongodb
+      - mongodb            # Ensure MongoDB starts before the backend
 
+  # Frontend React application service
   frontend:
-    build: ./frontend
+    build: ./frontend      # Build from Dockerfile in the frontend directory
     ports:
-      - "3000:3000"
+      - "3000:3000"        # Map container port 3000 to host port 3000
     environment:
-      - REACT_APP_API_URL=http://localhost:3001/api
+      - REACT_APP_API_URL=http://localhost:3001/api    # URL to reach the backend API
     depends_on:
-      - backend
+      - backend            # Ensure backend starts before the frontend
 
+# Define named volumes for persistent data
 volumes:
-  mongodb_data: 
+  mongodb_data:            # Volume for storing MongoDB data 

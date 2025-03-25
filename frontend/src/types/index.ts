@@ -1,8 +1,14 @@
+/**
+ * User role enumeration
+ */
 export enum UserRole {
   EMPLOYEE = 'employee',
   ADMIN = 'admin',
 }
 
+/**
+ * User interface representing user data
+ */
 export interface User {
   _id: string;
   name: string;
@@ -10,17 +16,26 @@ export interface User {
   role: 'admin' | 'employee';
 }
 
+/**
+ * Authentication response from the API
+ */
 export interface AuthResponse {
   access_token: string;
   user: User;
 }
 
+/**
+ * Question types supported in surveys
+ */
 export enum QuestionType {
   RATING = 'rating',
   CHOICE = 'choice',
   TEXT = 'text',
 }
 
+/**
+ * Question interface representing a survey question
+ */
 export interface Question {
   text: string;
   type: QuestionType;
@@ -28,6 +43,9 @@ export interface Question {
   required?: boolean;
 }
 
+/**
+ * Survey interface representing a survey
+ */
 export interface Survey {
   _id: string;
   id: string;
@@ -43,6 +61,9 @@ export interface Survey {
   dueDate: string;
 }
 
+/**
+ * SurveyResponse interface representing a user's response to a survey
+ */
 export interface SurveyResponse {
   _id: string;
   userId: {
@@ -64,13 +85,10 @@ export interface SurveyResponse {
   updatedAt: Date;
 }
 
+/**
+ * LoginCredentials interface for authentication
+ */
 export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterCredentials {
-  name: string;
   email: string;
   password: string;
 }

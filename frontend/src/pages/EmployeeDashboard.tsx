@@ -1,3 +1,15 @@
+/**
+ * Employee Dashboard Component
+ * 
+ * This component serves as the main dashboard for employee users.
+ * It displays surveys that require completion and those already completed,
+ * allowing users to start new surveys or view their previous responses.
+ * Features include:
+ * - Tab navigation between pending and completed surveys
+ * - Sorting of surveys by due date and submission status
+ * - Direct navigation to individual surveys
+ * - Response history viewing capability
+ */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -16,31 +28,45 @@ import { SurveyCard } from '../components/SurveyCard';
 import { surveyAPI } from '../services/api';
 import { isPast } from 'date-fns';
 
+/**
+ * Survey interface
+ * Defines the structure of a survey displayed on the dashboard
+ */
 interface Survey {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  status: 'Pending' | 'Submitted';
-  submittedAt: string | null;
-  questionCount: number;
-  isActive: boolean;
-  dueDate: string;
+  id: string;               // Unique identifier for the survey
+  title: string;            // Survey title
+  description: string;      // Survey description
+  createdAt: string;        // When the survey was created
+  status: 'Pending' | 'Submitted'; // Current status of the survey for this user
+  submittedAt: string | null; // When the survey was submitted, if applicable
+  questionCount: number;    // Number of questions in the survey
+  isActive: boolean;        // Whether the survey is currently active
+  dueDate: string;          // Deadline for survey completion
 }
 
+/**
+ * Type for active tab selection
+ */
 type TabValue = 'pending' | 'completed';
 
 export const EmployeeDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [surveys, setSurveys] = useState<Survey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabValue>('pending');
+  
+  // State management
+  const [surveys, setSurveys] = useState<Survey[]>([]);          // List of available surveys
+  const [loading, setLoading] = useState(true);                  // Loading state
+  const [error, setError] = useState<string | null>(null);       // Error messages
+  const [activeTab, setActiveTab] = useState<TabValue>('pending'); // Currently active tab
 
+  // Load surveys on component mount
   useEffect(() => {
     fetchSurveys();
   }, []);
 
+  /**
+   * Fetches available surveys for the current user from the API
+   * Filters for active surveys and sets the state
+   */
   const fetchSurveys = async () => {
     try {
       setLoading(true);
@@ -68,11 +94,17 @@ export const EmployeeDashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Navigates to the survey view page to start completing a survey
+   */
   const handleStartSurvey = (surveyId: string) => {
     console.log('Starting survey with ID:', surveyId);
     navigate(`/surveys/${surveyId}`);
   };
 
+  /**
+   * Navigates to the response history page to view a specific survey response
+   */
   const handleViewResponse = (surveyId: string) => {
     // Log with high visibility
     console.log('%c ViewResponse button clicked for surveyId: ' + surveyId, 'background: #ff00ff; color: #ffffff; font-size: 16px; font-weight: bold; padding: 5px;');
@@ -91,10 +123,18 @@ export const EmployeeDashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Handles tab changes between pending and completed surveys
+   */
   const handleTabChange = (_event: React.SyntheticEvent, newValue: TabValue) => {
     setActiveTab(newValue);
   };
 
+  /**
+   * Filters and sorts surveys based on the active tab
+   * - For pending tab: sorts by due date with overdue surveys first
+   * - For completed tab: sorts by submission date (most recent first)
+   */
   const filteredAndSortedSurveys = () => {
     const filtered = surveys.filter((survey) => {
       if (activeTab === 'completed') {
@@ -125,6 +165,7 @@ export const EmployeeDashboard: React.FC = () => {
     });
   };
 
+  // Show loading indicator while fetching data
   if (loading) {
     return (
       <Layout>
@@ -135,8 +176,10 @@ export const EmployeeDashboard: React.FC = () => {
     );
   }
 
+  // Process the surveys for display
   const sortedSurveys = filteredAndSortedSurveys();
 
+  // Main component render
   return (
     <Layout>
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -144,12 +187,14 @@ export const EmployeeDashboard: React.FC = () => {
           My Surveys
         </Typography>
 
+        {/* Display error message if present */}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
 
+        {/* Tab navigation and response history button */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -173,6 +218,7 @@ export const EmployeeDashboard: React.FC = () => {
           </Button>
         </Box>
 
+        {/* Grid of survey cards */}
         <Grid container spacing={3}>
           {sortedSurveys.length > 0 ? (
             sortedSurveys.map((survey) => {

@@ -1,3 +1,10 @@
+/**
+ * Responses Controller
+ * 
+ * Handles HTTP requests related to survey responses in the application.
+ * Implements role-based access control for administrative operations.
+ * Provides endpoints for submitting, retrieving, and exporting survey responses.
+ */
 import {
   Controller,
   Get,
@@ -20,6 +27,9 @@ import { UserRole } from '../users/schemas/user.schema';
 import { CreateResponseDto } from './dto/create-response.dto';
 import { Types } from 'mongoose';
 
+/**
+ * Extended Request interface with user authentication data
+ */
 interface RequestWithUser {
   user: {
     userId: string;
@@ -28,11 +38,21 @@ interface RequestWithUser {
   };
 }
 
+/**
+ * Controller for managing survey responses
+ * All routes require authentication (JwtAuthGuard)
+ * Admin-specific operations are protected by RolesGuard
+ */
 @Controller('responses')
 @UseGuards(JwtAuthGuard)
 export class ResponsesController {
   constructor(private readonly responsesService: ResponsesService) {}
 
+  /**
+   * Submit a new survey response
+   * Accessible by all authenticated users
+   * Associates the response with the current user
+   */
   @Post()
   async create(@Body() createResponseDto: CreateResponseDto, @Req() req: RequestWithUser) {
     if (!req.user?.userId) {
@@ -59,6 +79,11 @@ export class ResponsesController {
     }
   }
 
+  /**
+   * Get status of surveys for the current user
+   * Returns which surveys have been completed by the user
+   * Accessible by all authenticated users
+   */
   @Get('status')
   async getSurveyStatus(@Req() req: RequestWithUser) {
     if (!req.user?.userId) {
@@ -72,6 +97,11 @@ export class ResponsesController {
     }
   }
 
+  /**
+   * Export all survey responses as CSV
+   * Restricted to ADMIN users only
+   * Returns a downloadable CSV file
+   */
   @Get('export')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -82,6 +112,10 @@ export class ResponsesController {
     return res.send(csv);
   }
 
+  /**
+   * Get all responses submitted by the current user
+   * Accessible by all authenticated users
+   */
   @Get('my')
   async findMyResponses(@Req() req: RequestWithUser) {
     if (!req.user?.userId) {
@@ -95,6 +129,11 @@ export class ResponsesController {
     }
   }
 
+  /**
+   * Get all survey responses with pagination
+   * Can filter by surveyId if provided
+   * Restricted to ADMIN users only
+   */
   @Get()
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -121,6 +160,11 @@ export class ResponsesController {
     }
   }
 
+  /**
+   * Get a specific response by ID
+   * Performs ObjectId validation
+   * Accessible by all authenticated users
+   */
   @Get(':id')
   async findOne(@Param('id') id: string) {
     if (!Types.ObjectId.isValid(id)) {

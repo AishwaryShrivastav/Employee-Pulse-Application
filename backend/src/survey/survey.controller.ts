@@ -1,3 +1,9 @@
+/**
+ * Survey Controller
+ * 
+ * Handles HTTP requests related to surveys in the application.
+ * Implements role-based access control for administrative operations.
+ */
 import {
   Controller,
   Get,
@@ -19,6 +25,9 @@ import { UserRole } from '../users/schemas/user.schema';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
 
+/**
+ * Extended Request interface with user authentication data
+ */
 interface RequestWithUser {
   user: {
     userId: string;
@@ -27,11 +36,20 @@ interface RequestWithUser {
   };
 }
 
+/**
+ * Controller for managing surveys
+ * All routes require authentication (JwtAuthGuard)
+ * Admin-specific operations are protected by RolesGuard
+ */
 @Controller('surveys')
 @UseGuards(JwtAuthGuard)
 export class SurveyController {
   constructor(private readonly surveyService: SurveyService) {}
 
+  /**
+   * Get surveys available for the current user
+   * Accessible by all authenticated users
+   */
   @Get('available')
   async getAvailableSurveys(@Req() req: RequestWithUser) {
     if (!req.user?.userId) {
@@ -45,6 +63,10 @@ export class SurveyController {
     }
   }
 
+  /**
+   * Get all surveys with statistics (admin view)
+   * Restricted to ADMIN users only
+   */
   @Get('admin/list')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -52,12 +74,20 @@ export class SurveyController {
     return this.surveyService.findAllWithStats();
   }
 
+  /**
+   * Get all surveys
+   * Accessible by all authenticated users
+   */
   @Get()
   @UseGuards(JwtAuthGuard)
   async findAll() {
     return this.surveyService.findAll();
   }
 
+  /**
+   * Get a specific survey by ID
+   * Accessible by all authenticated users
+   */
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string) {
@@ -70,6 +100,10 @@ export class SurveyController {
     }
   }
 
+  /**
+   * Create a new survey
+   * Restricted to ADMIN users only
+   */
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -77,6 +111,10 @@ export class SurveyController {
     return this.surveyService.create(createSurveyDto);
   }
 
+  /**
+   * Update an existing survey by ID
+   * Restricted to ADMIN users only
+   */
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -84,6 +122,10 @@ export class SurveyController {
     return this.surveyService.update(id, updateSurveyDto);
   }
 
+  /**
+   * Update the active status of a survey
+   * Restricted to ADMIN users only
+   */
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -91,6 +133,10 @@ export class SurveyController {
     return this.surveyService.updateStatus(id, isActive);
   }
 
+  /**
+   * Delete a survey by ID
+   * Restricted to ADMIN users only
+   */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -98,6 +144,10 @@ export class SurveyController {
     return this.surveyService.remove(id);
   }
 
+  /**
+   * Create a default survey (for testing/seeding)
+   * Restricted to ADMIN users only
+   */
   @Post('seed')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

@@ -1,3 +1,12 @@
+/**
+ * Response Service
+ * 
+ * This service handles all business logic related to survey responses including:
+ * - Creating and validating new responses
+ * - Retrieving responses with various filters
+ * - Exporting response data
+ * - Tracking survey completion status
+ */
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -13,6 +22,19 @@ export class ResponsesService {
     @InjectModel(Survey.name) private surveyModel: Model<SurveyDocument>,
   ) {}
 
+  /**
+   * Creates a new survey response with validation
+   * 
+   * Performs several validation steps:
+   * 1. Validates MongoDB ObjectIDs
+   * 2. Checks if the survey exists
+   * 3. Validates that all required questions are answered
+   * 4. Ensures all answered questions belong to the survey
+   * 
+   * @param createResponseDto - Response data with user ID
+   * @returns The created response document
+   * @throws BadRequestException for validation errors
+   */
   async create(createResponseDto: CreateResponseDto & { userId: string }): Promise<ResponseDocument> {
     try {
       // Validate userId and surveyId
@@ -84,6 +106,13 @@ export class ResponsesService {
     }
   }
 
+  /**
+   * Retrieves all responses with pagination
+   * 
+   * @param page - Page number (1-based)
+   * @param limit - Number of items per page
+   * @returns Paginated response list with metadata
+   */
   async findAll(page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
     const [responses, total] = await Promise.all([
@@ -105,6 +134,13 @@ export class ResponsesService {
     };
   }
 
+  /**
+   * Finds a single response by ID
+   * 
+   * @param id - Response ID
+   * @returns The response document with populated references
+   * @throws NotFoundException if the response doesn't exist
+   */
   async findOne(id: string): Promise<ResponseDocument> {
     const response = await this.responseModel
       .findById(id)
@@ -119,6 +155,13 @@ export class ResponsesService {
     return response;
   }
 
+  /**
+   * Finds all responses submitted by a specific user
+   * 
+   * @param userId - User ID
+   * @returns Array of responses with populated survey data
+   * @throws BadRequestException for invalid ID or other errors
+   */
   async findByUserId(userId: string): Promise<ResponseDocument[]> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestException('Invalid user ID');
@@ -153,6 +196,13 @@ export class ResponsesService {
     }
   }
 
+  /**
+   * Finds all responses for a specific survey
+   * 
+   * @param surveyId - Survey ID
+   * @returns Array of responses with populated user and survey data
+   * @throws BadRequestException for invalid ID or other errors
+   */
   async findBySurveyId(surveyId: string): Promise<ResponseDocument[]> {
     if (!Types.ObjectId.isValid(surveyId)) {
       throw new BadRequestException('Invalid survey ID');
@@ -183,6 +233,11 @@ export class ResponsesService {
     }
   }
 
+  /**
+   * Exports all responses to CSV format
+   * 
+   * @returns CSV string with user, survey, and answer data
+   */
   async exportToCSV(): Promise<string> {
     const responses = await this.responseModel
       .find()
@@ -221,6 +276,13 @@ export class ResponsesService {
     return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
 
+  /**
+   * Gets survey submission status for a specific user
+   * 
+   * @param userId - User ID
+   * @returns Array of survey IDs with submission status
+   * @throws BadRequestException for invalid ID or other errors
+   */
   async getSurveyStatusForUser(userId: string): Promise<Array<{ surveyId: string; submitted: boolean }>> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestException('Invalid user ID');

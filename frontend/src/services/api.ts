@@ -5,13 +5,16 @@ import type {
   Question,
   User,
   LoginCredentials,
-  RegisterCredentials,
 } from '../types';
 
-// API configuration
+/**
+ * API configuration constants
+ */
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
-// Create axios instance with default config
+/**
+ * Create axios instance with default config
+ */
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -19,7 +22,9 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Add authentication token to requests
+/**
+ * Request interceptor to add authentication token to requests
+ */
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -32,7 +37,9 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// Handle API errors
+/**
+ * Response interceptor to handle API errors and unauthorized responses
+ */
 api.interceptors.response.use(
   response => response,
   error => {
@@ -44,57 +51,92 @@ api.interceptors.response.use(
   },
 );
 
-// Authentication API endpoints
+/**
+ * Authentication API endpoints
+ */
 export const authAPI = {
+  /**
+   * Login user with email and password
+   * @param email User email
+   * @param password User password
+   * @returns Authentication response with token and user data
+   */
   login: async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   },
 
-  register: async (name: string, email: string, password: string) => {
-    const response = await api.post('/auth/register', { name, email, password });
-    return response.data;
-  },
-
+  /**
+   * Get current user information using the stored token
+   * @returns User data
+   */
   getCurrentUser: async () => {
     const response = await api.get('/auth/me');
     return response.data;
   },
 };
 
-// Survey API endpoints
+/**
+ * Survey API endpoints
+ */
 export const surveyAPI = {
-  // Get all surveys
+  /**
+   * Get all surveys
+   * @returns Array of surveys
+   */
   getSurveys: async () => {
     const response = await api.get('/surveys');
     return response.data;
   },
 
-  // Create a new survey (admin only)
+  /**
+   * Create a new survey (admin only)
+   * @param survey Survey data to create
+   * @returns Created survey
+   */
   createSurvey: async (survey: { title: string; description: string; questions: Question[] }) => {
     const response = await api.post('/surveys', survey);
     return response.data;
   },
 
-  // Update a survey (admin only)
+  /**
+   * Update an existing survey (admin only)
+   * @param id Survey ID
+   * @param survey Updated survey data
+   * @returns Updated survey
+   */
   updateSurvey: async (id: string, survey: { title: string; description: string; questions: Question[] }) => {
     const response = await api.put(`/surveys/${id}`, survey);
     return response.data;
   },
 
-  // Update survey status (admin only)
+  /**
+   * Update survey status (admin only)
+   * @param id Survey ID
+   * @param isActive New active status
+   * @returns Updated survey
+   */
   updateSurveyStatus: async (id: string, isActive: boolean) => {
     const response = await api.patch(`/surveys/${id}/status`, { isActive });
     return response.data;
   },
 
-  // Delete a survey (admin only)
+  /**
+   * Delete a survey (admin only)
+   * @param id Survey ID
+   * @returns Deletion confirmation
+   */
   deleteSurvey: async (id: string) => {
     const response = await api.delete(`/surveys/${id}`);
     return response.data;
   },
 
-  // Submit a survey response
+  /**
+   * Submit a survey response
+   * @param surveyId Survey ID
+   * @param answers User's answers to the survey
+   * @returns Submission confirmation
+   */
   submitResponse: async (surveyId: string, answers: Array<{ questionIndex: number; value: string }>) => {
     const response = await api.post('/responses', {
       surveyId,
@@ -103,7 +145,10 @@ export const surveyAPI = {
     return response.data;
   },
 
-  // Get user's responses
+  /**
+   * Get user's own responses
+   * @returns Array of user's survey responses
+   */
   getMyResponses: async () => {
     try {
       console.log('Calling API: GET /responses/my');
@@ -147,7 +192,12 @@ export const surveyAPI = {
     }
   },
 
-  // Get all responses (admin only)
+  /**
+   * Get all responses (admin only)
+   * @param page Page number for pagination
+   * @param limit Number of items per page
+   * @returns Paginated responses
+   */
   getAllResponses: async (page = 1, limit = 10) => {
     const response = await api.get('/responses', {
       params: { page, limit },
@@ -155,7 +205,11 @@ export const surveyAPI = {
     return response.data;
   },
 
-  // Get responses for a specific survey (admin only)
+  /**
+   * Get responses for a specific survey (admin only)
+   * @param surveyId Survey ID
+   * @returns Survey responses
+   */
   getSurveyResponses: async (surveyId: string) => {
     try {
       console.log('Fetching responses for survey ID:', surveyId);
@@ -170,7 +224,10 @@ export const surveyAPI = {
     }
   },
 
-  // Export responses to CSV (admin only)
+  /**
+   * Export responses to CSV (admin only)
+   * @returns Blob with CSV data
+   */
   exportResponses: async () => {
     const response = await api.get('/responses/export', {
       responseType: 'blob',
@@ -178,12 +235,19 @@ export const surveyAPI = {
     return response.data;
   },
 
-  // Get survey completion status
+  /**
+   * Get survey completion status
+   * @returns Status of surveys for the current user
+   */
   getSurveyStatus: async () => {
     const response = await api.get('/responses/status');
     return response.data;
   },
 
+  /**
+   * Get surveys available to the current user
+   * @returns Array of available surveys
+   */
   getAvailableSurveys: async () => {
     const response = await api.get('/surveys/available');
     return response.data.map((survey: any) => ({
@@ -199,6 +263,11 @@ export const surveyAPI = {
     }));
   },
 
+  /**
+   * Get a single survey by ID
+   * @param id Survey ID
+   * @returns Survey details
+   */
   getSurvey: async (id: string) => {
     console.log('Fetching survey with ID:', id);
     try {
@@ -227,17 +296,33 @@ export const surveyAPI = {
   },
 };
 
+/**
+ * Export survey responses in the specified format
+ * @param format Export format (e.g., 'csv', 'xlsx')
+ * @returns URL to the exported file
+ */
 export const exportSurveyResponses = async (format: string): Promise<string> => {
   const response = await api.get(`/responses/export?format=${format}`);
   return response.data;
 };
 
+/**
+ * Admin-specific API endpoints
+ */
 export const adminAPI = {
+  /**
+   * Get dashboard metrics for admin
+   * @returns Dashboard metrics data
+   */
   getDashboardMetrics: async () => {
     const response = await api.get('/admin/dashboard-metrics');
     return response.data;
   },
 
+  /**
+   * Get survey participation graph data
+   * @returns Participation graph data
+   */
   getSurveyParticipationGraph: async () => {
     const response = await api.get('/admin/survey-participation-graph');
     return response.data;

@@ -46,7 +46,9 @@ import {
   ArcElement
 } from 'chart.js';
 
-// Register ChartJS components
+/**
+ * Register required ChartJS components for visualizations
+ */
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -57,7 +59,9 @@ ChartJS.register(
   ArcElement
 );
 
-// Define interfaces for our data
+/**
+ * Interface for dashboard metrics data structure
+ */
 interface DashboardMetrics {
   totalSurveys: number;
   totalResponses: number;
@@ -75,6 +79,9 @@ interface DashboardMetrics {
   };
 }
 
+/**
+ * Interface for participation data structure
+ */
 interface ParticipationData {
   participationTrend: {
     labels: string[];
@@ -89,21 +96,36 @@ interface ParticipationData {
   }[];
 }
 
+/**
+ * AdminDashboardPage Component
+ * 
+ * A comprehensive dashboard for administrators to view metrics, 
+ * visualize survey participation data, and manage responses.
+ */
 export const AdminDashboardPage: React.FC = () => {
+  // User authentication context
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State for survey responses data
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [graphLoading, setGraphLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [total, setTotal] = useState(0);
+  
+  // Dashboard data state
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [graphData, setGraphData] = useState<ParticipationData | null>(null);
 
-  // Fetch survey responses
+  /**
+   * Fetch survey responses with pagination
+   */
   const fetchResponses = useCallback(async () => {
     try {
       const data = await surveyAPI.getAllResponses(page + 1, rowsPerPage);
@@ -117,7 +139,9 @@ export const AdminDashboardPage: React.FC = () => {
     }
   }, [page, rowsPerPage]);
 
-  // Fetch dashboard metrics
+  /**
+   * Fetch dashboard metrics data
+   */
   const fetchDashboardMetrics = useCallback(async () => {
     try {
       const data = await adminAPI.getDashboardMetrics();
@@ -130,7 +154,9 @@ export const AdminDashboardPage: React.FC = () => {
     }
   }, []);
 
-  // Fetch participation graph data
+  /**
+   * Fetch participation graph data
+   */
   const fetchParticipationData = useCallback(async () => {
     try {
       const data = await adminAPI.getSurveyParticipationGraph();
@@ -150,28 +176,38 @@ export const AdminDashboardPage: React.FC = () => {
     fetchParticipationData();
   }, [fetchResponses, fetchDashboardMetrics, fetchParticipationData]);
 
-  // Handle page change
+  /**
+   * Handle page change for pagination
+   */
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  // Handle rows per page change
+  /**
+   * Handle rows per page change for pagination
+   */
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  // Navigate to survey management
+  /**
+   * Navigate to survey management page
+   */
   const handleSurveyManagement = () => {
     navigate('/survey-management');
   };
 
-  // Navigate to view response details
+  /**
+   * Navigate to view response details for a specific survey
+   */
   const handleViewResponses = (surveyId: string) => {
     navigate(`/surveys/${surveyId}/responses`);
   };
 
-  // Export all responses
+  /**
+   * Export all responses as CSV
+   */
   const handleExport = async () => {
     try {
       const blob = await surveyAPI.exportResponses();

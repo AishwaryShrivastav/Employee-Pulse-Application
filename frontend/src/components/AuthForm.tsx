@@ -15,9 +15,19 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * AuthForm Component
+ * 
+ * This component provides a form for user authentication.
+ * It handles login functionality and redirects users based on their role.
+ * 
+ * Note: Registration functionality has been removed as it's not needed in this application.
+ */
 export const AuthForm: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  
+  // Form state
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,6 +36,10 @@ export const AuthForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  /**
+   * Validates the form fields
+   * @returns Boolean indicating if the form is valid
+   */
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -43,6 +57,10 @@ export const AuthForm: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Handles form submission for login
+   * @param e - Form event
+   */
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (loading || !validateForm()) return;
@@ -67,6 +85,10 @@ export const AuthForm: React.FC = () => {
     }
   };
 
+  /**
+   * Handles input field changes
+   * @param e - Change event
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));

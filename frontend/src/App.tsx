@@ -17,6 +17,18 @@ import { PrivateRoute } from './components/PrivateRoute';
 import { Box } from '@mui/material';
 import { SurveyResponsesPage } from './pages/SurveyResponsesPage';
 
+/**
+ * Main App Component
+ * 
+ * This is the root component of the application which sets up:
+ * 1. Material-UI Theme Provider
+ * 2. Authentication Context
+ * 3. Application Routing
+ * 4. Toast Notifications
+ * 
+ * The application uses role-based access control for routes, with certain
+ * routes restricted to admin users only.
+ */
 export const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -25,8 +37,11 @@ export const App: React.FC = () => {
         <Router>
           <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/login" element={<LoginPage />} />
+              
+              {/* Employee routes (accessible by all authenticated users) */}
               <Route
                 path="/dashboard"
                 element={
@@ -35,6 +50,8 @@ export const App: React.FC = () => {
                   </PrivateRoute>
                 }
               />
+              
+              {/* Admin routes (restricted to admin users) */}
               <Route
                 path="/admin"
                 element={
@@ -51,6 +68,8 @@ export const App: React.FC = () => {
                   </PrivateRoute>
                 }
               />
+              
+              {/* Survey routes */}
               <Route
                 path="/surveys/:id"
                 element={

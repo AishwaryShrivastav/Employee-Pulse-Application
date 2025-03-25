@@ -1,251 +1,260 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Survey, Question, QuestionType } from '../types';
+import {
+  Container,
+  Typography,
+  Button,
+  Box,
+  Alert,
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+  Paper,
+} from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
+import { Layout } from '../components/Layout';
+import { SurveyManagementTable } from '../components/SurveyManagementTable';
+import { SurveyForm } from '../components/SurveyForm';
 import { surveyAPI } from '../services/api';
+import { toast } from 'react-toastify';
+import { Survey as GlobalSurvey, Question } from '../types';
 
+/**
+ * Interface for survey data shown in the management table
+ */
+interface Survey {
+  id: string;
+  title: string;
+  description: string;
+  questionCount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/**
+ * Interface for survey form data
+ */
+interface FormSurvey {
+  id?: string;
+  title: string;
+  description: string;
+  questions: Question[];
+}
+
+/**
+ * SurveyManagementPage Component
+ * 
+ * This component provides functionality for administrators to manage surveys:
+ * - View all surveys in a table
+ * - Create new surveys
+ * - Edit existing surveys
+ * - Activate/deactivate surveys
+ */
 export const SurveyManagementPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+
+  // State
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newSurvey, setNewSurvey] = useState<{
-    title: string;
-    description: string;
-    questions: Question[];
-  }>({
-    title: '',
-    description: '',
-    questions: [],
-  });
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedSurvey, setSelectedSurvey] = useState<FormSurvey | null>(null);
 
+  // Fetch surveys on component mount
   useEffect(() => {
     fetchSurveys();
   }, []);
 
+  /**
+   * Fetch all surveys from the API
+   */
   const fetchSurveys = async () => {
     try {
-      const data = await surveyAPI.getSurveys();
-      setSurveys(data);
+      setLoading(true);
+      const response = await surveyAPI.getSurveys();
+      setSurveys(response.map((survey: GlobalSurvey) => ({
+        id: survey._id,
+        title: survey.title,
+        description: survey.description,
+        questionCount: survey.questions.length,
+        isActive: survey.isActive,
+        createdAt: survey.createdAt
+      })));
     } catch (err) {
-      setError('Failed to fetch surveys');
+      setError('Failed to load surveys');
+      toast.error('Failed to load surveys');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  /**
+   * Handle creating a new survey
+   * @param surveyData - The survey data from the form
+   */
+  const handleCreateSurvey = async (surveyData: FormSurvey) => {
+    try {
+      await surveyAPI.createSurvey(surveyData);
+      toast.success('Survey created successfully');
+      setIsFormOpen(false);
+      fetchSurveys();
+    } catch (err) {
+      toast.error('Failed to create survey');
+    }
   };
 
-  const handleCreateSurvey = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Handle updating an existing survey
+   * @param surveyData - The updated survey data from the form
+   */
+  const handleUpdateSurvey = async (surveyData: FormSurvey) => {
     try {
-      await surveyAPI.createSurvey(newSurvey);
-      setShowCreateForm(false);
-      setNewSurvey({
-        title: '',
-        description: '',
-        questions: [],
+      if (!selectedSurvey?.id) return;
+      await surveyAPI.updateSurvey(selectedSurvey.id, surveyData);
+      toast.success('Survey updated successfully');
+      setIsFormOpen(false);
+      setSelectedSurvey(null);
+      fetchSurveys();
+    } catch (err) {
+      toast.error('Failed to update survey');
+    }
+  };
+
+  /**
+   * Handle toggling a survey's active status
+   * @param id - The survey ID
+   * @param isActive - The new active status
+   */
+  const handleToggleStatus = async (id: string, isActive: boolean) => {
+    try {
+      await surveyAPI.updateSurveyStatus(id, isActive);
+      toast.success(`Survey ${isActive ? 'activated' : 'deactivated'} successfully`);
+      fetchSurveys();
+    } catch (err) {
+      toast.error('Failed to update survey status');
+    }
+  };
+
+  /**
+   * Handle editing a survey
+   * @param survey - The survey to edit
+   */
+  const handleEdit = async (survey: Survey) => {
+    try {
+      const fullSurvey = await surveyAPI.getSurvey(survey.id);
+      setSelectedSurvey({
+        id: fullSurvey.id,
+        title: fullSurvey.title,
+        description: fullSurvey.description,
+        questions: fullSurvey.questions
       });
-      fetchSurveys();
+      setIsFormOpen(true);
     } catch (err) {
-      setError('Failed to create survey');
+      toast.error('Failed to load survey details');
     }
   };
 
-  const handleDeleteSurvey = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this survey?')) {
-      return;
-    }
-    try {
-      await surveyAPI.deleteSurvey(id);
-      fetchSurveys();
-    } catch (err) {
-      setError('Failed to delete survey. Please try again.');
-    }
+  /**
+   * Handle closing the survey form
+   */
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedSurvey(null);
   };
 
-  const addQuestion = () => {
-    setNewSurvey(prev => ({
-      ...prev,
-      questions: [
-        ...prev.questions,
-        {
-          text: '',
-          type: QuestionType.RATING,
-          options: [],
-          required: true,
-        },
-      ],
-    }));
-  };
-
-  const updateQuestion = (index: number, field: string, value: string | boolean) => {
-    setNewSurvey(prev => ({
-      ...prev,
-      questions: prev.questions.map((q, i) =>
-        i === index ? { ...q, [field]: value } : q
-      ),
-    }));
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  // Show loading state
+  if (loading) {
+    return (
+      <Layout>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </Layout>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">Survey Management</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">Welcome, {user?.name}</span>
-              <button onClick={handleLogout} className="btn btn-secondary">
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <Layout>
+      <Container maxWidth="lg">
+        <Box 
+          component={Paper} 
+          elevation={0}
+          sx={{ 
+            p: { xs: 2, sm: 3 },
+            mt: { xs: 2, sm: 3 },
+            mb: { xs: 2, sm: 3 },
+            borderRadius: 2,
+          }}
+        >
+          <Box 
+            display="flex" 
+            flexDirection={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between" 
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            gap={2}
+            mb={4}
+          >
+            <Typography 
+              variant="h4" 
+              component="h1"
+              sx={{ 
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                textAlign: { xs: 'center', sm: 'left' }
+              }}
+            >
+              Survey Management
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setIsFormOpen(true)}
+              size="large"
+              fullWidth={isMobile}
+              sx={{ 
+                py: 1.5,
+                px: 3,
+                borderRadius: 2,
+                boxShadow: theme.shadows[3],
+              }}
+            >
+              Create Survey
+            </Button>
+          </Box>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Survey Management</h1>
-          <button onClick={() => setShowCreateForm(true)} className="btn btn-primary">
-            Create New Survey
-          </button>
-        </div>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 2,
+              }}
+            >
+              {error}
+            </Alert>
+          )}
 
-        {showCreateForm && (
-          <form onSubmit={handleCreateSurvey} className="card mb-8">
-            <h2 className="text-xl font-semibold mb-4">Create New Survey</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  value={newSurvey.title}
-                  onChange={e => setNewSurvey(prev => ({ ...prev, title: e.target.value }))}
-                  className="form-input mt-1 block w-full"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={newSurvey.description}
-                  onChange={e => setNewSurvey(prev => ({ ...prev, description: e.target.value }))}
-                  className="form-textarea mt-1 block w-full"
-                  rows={3}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Questions</label>
-                <div className="space-y-4 mt-2">
-                  {newSurvey.questions.map((question, index) => (
-                    <div key={index} className="p-4 border rounded">
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={question.text}
-                          onChange={e => updateQuestion(index, 'text', e.target.value)}
-                          placeholder="Question text"
-                          className="form-input block w-full"
-                          required
-                        />
-                        <select
-                          value={question.type}
-                          onChange={e => updateQuestion(index, 'type', e.target.value)}
-                          className="form-select block w-full"
-                          required
-                        >
-                          <option value={QuestionType.RATING}>Rating</option>
-                          <option value={QuestionType.CHOICE}>Choice</option>
-                          <option value={QuestionType.TEXT}>Text</option>
-                        </select>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={question.required}
-                            onChange={e => updateQuestion(index, 'required', e.target.checked)}
-                            className="form-checkbox"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Required</span>
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-                  <button type="button" onClick={addQuestion} className="btn btn-secondary">
-                    Add Question
-                  </button>
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Create Survey
-                </button>
-              </div>
-            </div>
-          </form>
-        )}
+          <Box sx={{ 
+            borderRadius: 2,
+            overflow: 'hidden',
+            boxShadow: theme.shadows[1],
+          }}>
+            <SurveyManagementTable
+              surveys={surveys}
+              onEdit={handleEdit}
+              onToggleStatus={handleToggleStatus}
+            />
+          </Box>
+        </Box>
 
-        <div className="space-y-4">
-          {surveys.map(survey => (
-            <div key={survey._id} className="card">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{survey.title}</h3>
-                  <p className="text-sm text-gray-500">{survey.description}</p>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => navigate(`/surveys/${survey._id}/edit`)}
-                    className="btn btn-secondary"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSurvey(survey._id)}
-                    className="btn btn-danger"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => navigate(`/surveys/${survey._id}/responses`)}
-                    className="btn btn-primary"
-                  >
-                    View Responses
-                  </button>
-                </div>
-              </div>
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700">Questions:</h4>
-                <ul className="mt-2 space-y-1">
-                  {survey.questions.map((question, index) => (
-                    <li key={index} className="text-sm text-gray-600">
-                      {index + 1}. {question.text} ({question.type})
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
+        <SurveyForm
+          open={isFormOpen}
+          onClose={handleCloseForm}
+          onSubmit={selectedSurvey ? handleUpdateSurvey : handleCreateSurvey}
+          initialData={selectedSurvey || undefined}
+        />
+      </Container>
+    </Layout>
   );
 };
