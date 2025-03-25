@@ -1,0 +1,121 @@
+# Production Docker Compose configuration for Employee Pulse Application
+version: '3.8'
+
+services:
+  # MongoDB database service
+  mongodb:
+    image: mongo:latest
+    container_name: employee-pulse-mongodb-prod
+    restart: always
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - employee-pulse-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # Security: Don't expose MongoDB ports to the host in production
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend NestJS API service
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee-pulse-backend-prod
+    restart: always
+    # No direct port exposure in production - accessed via Nginx
+    environment:
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/employee-pulse?authSource=admin
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3001
+      - NODE_ENV=production
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - employee-pulse-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Frontend React application service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${DOMAIN_NAME}/api
+    container_name: employee-pulse-frontend-prod
+    restart: always
+    # No direct port exposure in production - accessed via Nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - employee-pulse-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: employee-pulse-nginx-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/www:/var/www/html
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - employee-pulse-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Define networks for service isolation
+networks:
+  employee-pulse-network:
+    driver: bridge
+
+# Define named volumes for persistent data
+volumes:
+  mongodb_data:
+    name: employee-pulse-mongodb-prod-data 

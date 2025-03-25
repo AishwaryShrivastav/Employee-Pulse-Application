@@ -7,33 +7,78 @@ services:
   # MongoDB database service
   mongodb:
     image: mongo:latest    # Use the latest MongoDB image from Docker Hub
+    container_name: employee-pulse-mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"      # Map container port 27017 to host port 27017
     volumes:
       - mongodb_data:/data/db    # Persist MongoDB data in a named volume
+    networks:
+      - employee-pulse-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-}
 
   # Backend NestJS API service
   backend:
-    build: ./backend       # Build from Dockerfile in the backend directory
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee-pulse-backend
+    restart: unless-stopped
     ports:
       - "3001:3001"        # Map container port 3001 to host port 3001
     environment:
       # Environment variables for the backend service
-      - MONGODB_URI=mongodb://mongodb:27017/employee-pulse  # MongoDB connection string (uses service name 'mongodb')
-      - JWT_SECRET=your_jwt_secret_key                     # Secret key for JWT token generation
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME:+${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@}mongodb:27017/employee-pulse${MONGO_INITDB_ROOT_USERNAME:+?authSource=admin}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key}
       - PORT=3001                                         # Port on which the backend server listens
+      - NODE_ENV=${NODE_ENV:-development}
     depends_on:
-      - mongodb            # Ensure MongoDB starts before the backend
+      mongodb:
+        condition: service_healthy
+    networks:
+      - employee-pulse-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   # Frontend React application service
   frontend:
-    build: ./frontend      # Build from Dockerfile in the frontend directory
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3001/api}
+    container_name: employee-pulse-frontend
+    restart: unless-stopped
     ports:
-      - "3000:3000"        # Map container port 3000 to host port 3000
-    environment:
-      - REACT_APP_API_URL=http://localhost:3001/api    # URL to reach the backend API
+      - "3000:80"
     depends_on:
-      - backend            # Ensure backend starts before the frontend
+      backend:
+        condition: service_healthy
+    networks:
+      - employee-pulse-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# Define networks for service isolation
+networks:
+  employee-pulse-network:
+    driver: bridge
 
 # Define named volumes for persistent data
 volumes:
