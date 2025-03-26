@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { OpenAIService } from '../services/openai.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -11,7 +12,10 @@ import { UserRole } from '../users/schemas/user.schema';
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
   
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly openAIService: OpenAIService,
+  ) {}
 
   @Get('dashboard-metrics')
   async getDashboardMetrics() {
@@ -37,5 +41,12 @@ export class AdminController {
       this.logger.error(`Error retrieving survey participation graph: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Failed to retrieve survey participation graph data');
     }
+  }
+
+  @Get('insights')
+  async getAIInsights() {
+    const surveyResponses = await this.adminService.getAllSurveyResponses();
+    const insights = await this.openAIService.generateSurveyInsights(surveyResponses);
+    return { insights };
   }
 } 

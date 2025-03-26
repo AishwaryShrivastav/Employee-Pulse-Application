@@ -1,17 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { Survey } from '../survey/schemas/survey.schema';
 import { Response } from '../responses/schemas/response.schema';
 import { User } from '../users/schemas/user.schema';
+import { SurveyResponse } from '../schemas/survey-response.schema';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     @InjectModel(Survey.name) private surveyModel: Model<Survey>,
     @InjectModel(Response.name) private responseModel: Model<Response>,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(SurveyResponse.name) private surveyResponseModel: Model<SurveyResponse>,
   ) {}
 
   async getDashboardMetrics() {
@@ -179,6 +183,18 @@ export class AdminService {
           { label: 'Strongly Disagree', value: 3 },
         ],
       };
+    }
+  }
+
+  async getAllSurveyResponses(): Promise<SurveyResponse[]> {
+    this.logger.log('Fetching all survey responses');
+    try {
+      const responses = await this.surveyResponseModel.find().exec();
+      this.logger.debug(`Found ${responses.length} survey responses`);
+      return responses;
+    } catch (error) {
+      this.logger.error(`Error fetching survey responses: ${error.message}`, error.stack);
+      throw error;
     }
   }
 } 

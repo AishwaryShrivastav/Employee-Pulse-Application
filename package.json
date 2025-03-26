@@ -3,53 +3,25 @@
   "version": "1.0.0",
   "private": true,
   "description": "Employee Pulse Application - Local Development",
-  // Scripts for managing the application
   "scripts": {
-    // Install dependencies for both backend and frontend
     "install:all": "cd backend && npm install && cd ../frontend && npm install",
-    
-    // Start MongoDB server using local data directory
     "start:mongodb": "mongod --dbpath ./data/db",
-    
-    // Start the NestJS backend server in development mode
     "start:backend": "cd backend && npm run start:dev",
-    
-    // Start the React frontend development server
     "start:frontend": "cd frontend && npm start",
-    
-    // Seed the database with initial data
     "seed:db": "cd backend && npm run seed",
-    
-    // Start all services (MongoDB, backend, frontend) concurrently
     "dev": "concurrently \"npm run start:mongodb\" \"npm run start:backend\" \"npm run start:frontend\"",
-    
-    // Start only backend and frontend (assumes MongoDB is already running)
     "dev:quick": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    
-    // Start the application using Docker containers
     "start": "docker-compose up",
-    
-    // Build and start Docker containers
     "start:build": "docker-compose up --build",
-    
-    // Stop Docker containers
     "stop": "docker-compose down",
-    
-    // Remove Docker containers and volumes
     "clean": "docker-compose down -v",
-    
-    // Seed the database when running in Docker
     "seed": "docker-compose exec backend npm run seed",
-    
-    // Linting commands
     "lint": "npm run lint:backend && npm run lint:frontend",
     "lint:fix": "npm run lint:fix:backend && npm run lint:fix:frontend",
     "lint:backend": "cd backend && npm run lint",
     "lint:frontend": "cd frontend && npm run lint",
     "lint:fix:backend": "cd backend && npm run lint:fix",
     "lint:fix:frontend": "cd frontend && npm run lint:fix",
-    
-    // Code formatting commands
     "format": "npm run format:backend && npm run format:frontend",
     "format:backend": "cd backend && npm run format",
     "format:frontend": "cd frontend && npm run format"
@@ -57,7 +29,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    // Package to run multiple commands concurrently
     "concurrently": "^8.2.2"
   }
 } 

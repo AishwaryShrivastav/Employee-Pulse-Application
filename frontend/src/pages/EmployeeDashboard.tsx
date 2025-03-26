@@ -19,14 +19,43 @@ import {
   Box,
   CircularProgress,
   Alert,
-  Tabs,
-  Tab,
+  Paper,
+  useTheme,
+  useMediaQuery,
+  Divider,
   Button,
+  Stack,
+  Chip,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
 } from '@mui/material';
+import {
+  Assignment as AssignmentIcon,
+  CheckCircle as CheckCircleIcon,
+  AccessTime as AccessTimeIcon,
+  Visibility as VisibilityIcon,
+  PlayArrow as PlayArrowIcon,
+} from '@mui/icons-material';
 import { Layout } from '../components/Layout';
 import { SurveyCard } from '../components/SurveyCard';
 import { surveyAPI } from '../services/api';
-import { isPast } from 'date-fns';
+import { isPast, format } from 'date-fns';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ChartData } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+import { SurveyResponse } from '../types';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 /**
  * Survey interface
@@ -44,19 +73,36 @@ interface Survey {
   dueDate: string;          // Deadline for survey completion
 }
 
-/**
- * Type for active tab selection
- */
-type TabValue = 'pending' | 'completed';
+type ChartDataType = {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor: string;
+  }[];
+};
 
 export const EmployeeDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
   
+  const defaultChartData: ChartDataType = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [{
+      label: 'Survey Participation',
+      data: [0, 0, 0, 0, 0, 0],
+      backgroundColor: theme.palette.primary.main,
+    }]
+  };
+
   // State management
   const [surveys, setSurveys] = useState<Survey[]>([]);          // List of available surveys
   const [loading, setLoading] = useState(true);                  // Loading state
   const [error, setError] = useState<string | null>(null);       // Error messages
-  const [activeTab, setActiveTab] = useState<TabValue>('pending'); // Currently active tab
+  const [participationChartData, setParticipationChartData] = useState<ChartDataType>(defaultChartData);
+  const [recentResponses, setRecentResponses] = useState<SurveyResponse[]>([]);  // Recent survey responses
 
   // Load surveys on component mount
   useEffect(() => {
@@ -123,33 +169,10 @@ export const EmployeeDashboard: React.FC = () => {
     }
   };
 
-  /**
-   * Handles tab changes between pending and completed surveys
-   */
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: TabValue) => {
-    setActiveTab(newValue);
-  };
-
-  /**
-   * Filters and sorts surveys based on the active tab
-   * - For pending tab: sorts by due date with overdue surveys first
-   * - For completed tab: sorts by submission date (most recent first)
-   */
-  const filteredAndSortedSurveys = () => {
-    const filtered = surveys.filter((survey) => {
-      if (activeTab === 'completed') {
-        return survey.status === 'Submitted';
-      }
-      return survey.status === 'Pending';
-    });
-
-    return filtered.sort((a, b) => {
-      if (activeTab === 'completed') {
-        // Sort completed surveys by submission date (most recent first)
-        return new Date(b.submittedAt!).getTime() - new Date(a.submittedAt!).getTime();
-      }
-      
-      // For pending surveys, prioritize overdue, then due soon
+  // Filter and sort available surveys
+  const availableSurveys = surveys
+    .filter(survey => survey.status === 'Pending')
+    .sort((a, b) => {
       const aDate = new Date(a.dueDate);
       const bDate = new Date(b.dueDate);
       const now = new Date();
@@ -160,10 +183,15 @@ export const EmployeeDashboard: React.FC = () => {
       if (aOverdue && !bOverdue) return -1;
       if (!aOverdue && bOverdue) return 1;
       
-      // If both are overdue or not overdue, sort by due date
       return aDate.getTime() - bDate.getTime();
     });
-  };
+
+  // Filter and sort completed surveys
+  const completedSurveys = surveys
+    .filter(survey => survey.status === 'Submitted')
+    .sort((a, b) => 
+      new Date(b.submittedAt!).getTime() - new Date(a.submittedAt!).getTime()
+    );
 
   // Show loading indicator while fetching data
   if (loading) {
@@ -176,82 +204,289 @@ export const EmployeeDashboard: React.FC = () => {
     );
   }
 
-  // Process the surveys for display
-  const sortedSurveys = filteredAndSortedSurveys();
-
   // Main component render
   return (
     <Layout>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          My Surveys
-        </Typography>
+      <Container maxWidth="lg" sx={{ py: isSmall ? 2 : 4 }}>
+        <Box sx={{ mb: isSmall ? 2 : 4 }}>
+          <Typography 
+            variant={isSmall ? "h5" : "h4"} 
+            component="h1" 
+            gutterBottom
+            sx={{ fontWeight: 600 }}
+          >
+            My Surveys
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Track and manage your survey responses
+          </Typography>
+        </Box>
 
         {/* Display error message if present */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: isSmall ? 2 : 3,
+              fontSize: isSmall ? '0.875rem' : '1rem'
+            }}
+          >
             {error}
           </Alert>
         )}
 
-        {/* Tab navigation and response history button */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          borderBottom: 1, 
-          borderColor: 'divider', 
-          mb: 3 
-        }}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="Pending" value="pending" />
-            <Tab label="Completed" value="completed" />
-          </Tabs>
-          
-          <Button 
-            variant="outlined" 
-            color="primary"
-            onClick={() => navigate('/response-history')}
-            sx={{ mb: 1 }}
+        {/* Available Surveys Section */}
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            p: isSmall ? 2 : 3, 
+            mb: isSmall ? 2 : 3,
+            borderRadius: 2
+          }}
+        >
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            spacing={1} 
+            sx={{ mb: 2 }}
           >
-            View Response History
-          </Button>
-        </Box>
+            <AssignmentIcon color="primary" />
+            <Typography variant={isSmall ? "h6" : "h5"} sx={{ fontWeight: 600 }}>
+              Available Surveys
+            </Typography>
+            <Chip 
+              label={availableSurveys.length} 
+              size={isSmall ? "small" : "medium"}
+              color="primary"
+            />
+          </Stack>
 
-        {/* Grid of survey cards */}
-        <Grid container spacing={3}>
-          {sortedSurveys.length > 0 ? (
-            sortedSurveys.map((survey) => {
-              // Debug logging for submitted surveys
-              if (survey.status === 'Submitted') {
-                console.log(`%c Rendering Submitted survey card: ${survey.id} - ${survey.title}`, 
-                  'background: #9c27b0; color: white; font-size: 14px;');
-              }
-              
-              return (
-                <Grid item xs={12} sm={6} md={4} key={survey.id}>
-                  <SurveyCard
-                    survey={survey}
-                    onStart={() => handleStartSurvey(survey.id)}
-                    onViewResponse={() => {
-                      console.log(`%c Forced onViewResponse handler for survey: ${survey.id} - Status: ${survey.status}`, 
-                        'background: #ff6d00; color: white; font-size: 14px; font-weight: bold;');
-                      handleViewResponse(survey.id);
-                    }}
-                  />
-                </Grid>
-              );
-            })
+          {availableSurveys.length === 0 ? (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              No pending surveys available at the moment.
+            </Alert>
           ) : (
-            <Grid item xs={12}>
-              <Alert severity="info">
-                {activeTab === 'pending'
-                  ? 'No pending surveys available.'
-                  : 'No completed surveys yet.'}
-              </Alert>
+            <Grid container spacing={isSmall ? 2 : 3}>
+              {availableSurveys.map((survey) => (
+                <Grid item xs={12} sm={6} md={4} key={survey.id}>
+                  <Paper 
+                    elevation={3}
+                    sx={{
+                      p: isSmall ? 2 : 3,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                      },
+                    }}
+                  >
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        {survey.title}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{
+                          mb: 2,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {survey.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <AccessTimeIcon fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          Due: {format(new Date(survey.dueDate), 'MMM d, yyyy')}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ mt: 'auto' }}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleStartSurvey(survey.id)}
+                        startIcon={<PlayArrowIcon />}
+                        size={isSmall ? "small" : "medium"}
+                      >
+                        Start Survey
+                      </Button>
+                    </Box>
+                  </Paper>
+                </Grid>
+              ))}
             </Grid>
           )}
-        </Grid>
+        </Paper>
+
+        {/* Completed Surveys Section */}
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            p: isSmall ? 2 : 3,
+            borderRadius: 2
+          }}
+        >
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            spacing={1} 
+            sx={{ mb: 2 }}
+          >
+            <CheckCircleIcon color="success" />
+            <Typography variant={isSmall ? "h6" : "h5"} sx={{ fontWeight: 600 }}>
+              Completed Surveys
+            </Typography>
+            <Chip 
+              label={completedSurveys.length} 
+              size={isSmall ? "small" : "medium"}
+              color="success"
+            />
+          </Stack>
+
+          {completedSurveys.length === 0 ? (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              You haven't completed any surveys yet.
+            </Alert>
+          ) : (
+            <Grid container spacing={isSmall ? 2 : 3}>
+              {completedSurveys.map((survey) => (
+                <Grid item xs={12} sm={6} md={4} key={survey.id}>
+                  <Paper 
+                    elevation={3}
+                    sx={{
+                      p: isSmall ? 2 : 3,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                      },
+                    }}
+                  >
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        {survey.title}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{
+                          mb: 2,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {survey.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <CheckCircleIcon fontSize="small" color="success" />
+                        <Typography variant="body2" color="success.main">
+                          Completed on {format(new Date(survey.submittedAt!), 'MMM d, yyyy')}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Box sx={{ mt: 'auto' }}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleViewResponse(survey.id)}
+                        startIcon={<VisibilityIcon />}
+                        size={isSmall ? "small" : "medium"}
+                      >
+                        View Response
+                      </Button>
+                    </Box>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Paper>
+
+        {/* Chart Section */}
+        <Paper elevation={2} sx={{ p: isSmall ? 2 : 3, mt: 3, borderRadius: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <AssignmentIcon color="primary" />
+            <Typography variant={isSmall ? "h6" : "h5"} sx={{ fontWeight: 600 }}>
+              Survey Participation
+            </Typography>
+          </Stack>
+          <Box sx={{ height: isSmall ? 250 : 350 }}>
+            <Bar
+              data={participationChartData as unknown as ChartData<'bar', number[], string>}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    display: true,
+                    position: 'top' as const,
+                  },
+                  title: {
+                    display: true,
+                    text: 'Monthly Survey Participation'
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      stepSize: 1
+                    }
+                  }
+                }
+              }}
+            />
+          </Box>
+        </Paper>
+
+        {/* Recent Responses Table */}
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Survey Title</TableCell>
+                {!isSmall && <TableCell>Submitted On</TableCell>}
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {recentResponses.map((response) => (
+                <TableRow key={response._id} hover>
+                  <TableCell sx={{ maxWidth: isSmall ? 120 : 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {response.surveyId.title}
+                  </TableCell>
+                  {!isSmall && (
+                    <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {format(new Date(response.submittedAt), 'MMM d, yyyy')}
+                    </TableCell>
+                  )}
+                  <TableCell align="right">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleViewResponse(response._id)}
+                      startIcon={<VisibilityIcon />}
+                    >
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Container>
     </Layout>
   );

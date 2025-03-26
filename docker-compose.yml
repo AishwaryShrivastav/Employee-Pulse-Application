@@ -13,6 +13,7 @@ services:
       - "${MONGODB_PORT}:27017"
     volumes:
       - mongodb_data:/data/db    # Persist MongoDB data in a named volume
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - employee-pulse-network
     environment:
@@ -37,6 +38,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
       - CORS_ORIGIN=http://${DOMAIN_NAME}:${FRONTEND_PORT}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       - mongodb
     networks:

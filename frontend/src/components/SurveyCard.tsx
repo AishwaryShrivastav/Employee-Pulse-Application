@@ -8,10 +8,23 @@ import {
   Box,
   CardActions,
   Tooltip,
+  useTheme,
+  useMediaQuery,
+  IconButton,
 } from '@mui/material';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
-import { Assignment, CheckCircle, Schedule, Warning } from '@mui/icons-material';
+import {
+  Assignment,
+  CheckCircle,
+  Schedule,
+  Warning,
+  AccessTime,
+  Visibility,
+  PlayArrow,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useLogger } from '../hooks/useLogger';
 
 interface SurveyCardProps {
   survey: {
@@ -19,7 +32,7 @@ interface SurveyCardProps {
     title: string;
     description: string;
     createdAt: string;
-    status: 'Pending' | 'Submitted';
+    status: 'Pending' | 'Submitted' | 'Overdue';
     submittedAt: string | null;
     questionCount: number;
     dueDate: string;
@@ -29,10 +42,16 @@ interface SurveyCardProps {
 }
 
 export const SurveyCard: React.FC<SurveyCardProps> = ({ survey, onStart, onViewResponse }) => {
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const logger = useLogger();
+
   const isSubmitted = survey.status === 'Submitted';
   const isDueSoon = !isSubmitted && new Date(survey.dueDate) < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2 days
   const isOverdue = !isSubmitted && isPast(new Date(survey.dueDate));
-  const navigate = useNavigate(); // Get the navigate function from React Router
 
   // Debug logging at component initialization
   React.useEffect(() => {
@@ -50,6 +69,32 @@ export const SurveyCard: React.FC<SurveyCardProps> = ({ survey, onStart, onViewR
       hasStartHandler: !!onStart
     });
   }, [survey.id, survey.title, survey.status, isSubmitted, onViewResponse, onStart]);
+
+  const handleStartSurvey = () => {
+    try {
+      logger.log('Starting survey', { surveyId: survey.id });
+      if (onStart) {
+        onStart();
+      } else {
+        navigate(`/survey/${survey.id}`);
+      }
+    } catch (error) {
+      logger.error('Error starting survey', { error, surveyId: survey.id });
+    }
+  };
+
+  const handleViewResponses = () => {
+    try {
+      logger.log('Viewing responses', { surveyId: survey.id });
+      if (onViewResponse) {
+        onViewResponse();
+      } else {
+        navigate(`/survey/${survey.id}/responses`);
+      }
+    } catch (error) {
+      logger.error('Error viewing responses', { error, surveyId: survey.id });
+    }
+  };
 
   const getStatusChip = () => {
     if (isSubmitted) {
@@ -92,16 +137,40 @@ export const SurveyCard: React.FC<SurveyCardProps> = ({ survey, onStart, onViewR
     );
   };
 
+  const getStatusColor = () => {
+    switch (survey.status) {
+      case 'Submitted':
+        return theme.palette.success.main;
+      case 'Overdue':
+        return theme.palette.error.main;
+      default:
+        return theme.palette.warning.main;
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (survey.status) {
+      case 'Submitted':
+        return <CheckCircle />;
+      case 'Overdue':
+        return <Warning />;
+      default:
+        return <Schedule />;
+    }
+  };
+
   return (
     <Card
+      elevation={2}
       sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
-          boxShadow: 6,
+          transform: 'translateY(-4px)',
+          boxShadow: 4,
         },
-        cursor: 'pointer',
       }}
       onClick={(e) => {
         // Prevent for card click handling when buttons explicitly handle clicks
@@ -129,95 +198,144 @@ export const SurveyCard: React.FC<SurveyCardProps> = ({ survey, onStart, onViewR
         }
       }}
     >
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-          <Typography variant="h6" component="h2" gutterBottom>
-            {survey.title}
-          </Typography>
-          {getStatusChip()}
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isSmall ? 1.5 : 2,
+          p: isSmall ? 2 : 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Assignment color="primary" />
+            <Typography
+              variant={isSmall ? "subtitle1" : "h6"}
+              component="h2"
+              sx={{
+                fontWeight: 600,
+                lineHeight: 1.2,
+                mb: 0.5,
+              }}
+            >
+              {survey.title}
+            </Typography>
+          </Box>
+          <Chip
+            icon={getStatusIcon()}
+            label={survey.status.charAt(0).toUpperCase() + survey.status.slice(1)}
+            size={isSmall ? "small" : "medium"}
+            sx={{
+              bgcolor: `${getStatusColor()}15`,
+              color: getStatusColor(),
+              fontWeight: 500,
+              '& .MuiChip-icon': {
+                color: 'inherit',
+              },
+            }}
+          />
         </Box>
-        
-        <Typography variant="body2" color="text.secondary" paragraph>
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            flexGrow: 1,
+            mb: 1,
+            display: '-webkit-box',
+            WebkitLineClamp: isSmall ? 2 : 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
           {survey.description}
         </Typography>
 
-        <Box display="flex" alignItems="center" gap={2} mb={1}>
-          <Assignment fontSize="small" color="action" />
-          <Typography variant="body2" color="text.secondary">
-            {survey.questionCount} Questions
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            color: 'text.secondary',
+            mb: 1,
+          }}
+        >
+          <AccessTime fontSize="small" />
+          <Typography variant="body2">
+            Due: {format(new Date(survey.dueDate), 'MMM d, yyyy')}
           </Typography>
         </Box>
 
-        <Typography variant="body2" color="text.secondary">
-          Created: {format(new Date(survey.createdAt), 'MMM d, yyyy')}
-        </Typography>
-        
-        {isSubmitted && survey.submittedAt ? (
-          <Typography variant="body2" color="text.secondary">
-            Submitted: {format(new Date(survey.submittedAt), 'MMM d, yyyy')}
-          </Typography>
-        ) : (
-          <Tooltip title={format(new Date(survey.dueDate), 'MMM d, yyyy, h:mm a')}>
-            <Typography variant="body2" color={isOverdue ? "error.main" : "text.secondary"}>
-              Due: {formatDistanceToNow(new Date(survey.dueDate), { addSuffix: true })}
-            </Typography>
-          </Tooltip>
-        )}
-      </CardContent>
-
-      <CardActions>
-        <Button
-          fullWidth
-          variant="contained"
-          color={isSubmitted ? 'secondary' : isOverdue ? 'error' : isDueSoon ? 'warning' : 'primary'}
-          onClick={(e) => {
-            // Stop event propagation completely
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Log with more visibility
-            console.log('%c BUTTON CLICKED: View Response Button Handler', 'background: #ff0000; color: #ffffff; font-weight: bold; font-size: 18px; padding: 10px;');
-            console.log('Survey details:', { 
-              id: survey.id,
-              title: survey.title,
-              status: survey.status,
-              isSubmitted,
-              hasHandler: !!onViewResponse
-            });
-            
-            // For submitted surveys, we need to handle the response view
-            if (isSubmitted) {
-              if (onViewResponse) {
-                console.log('%c CALLING onViewResponse HANDLER NOW', 'background: #00ff00; color: #000000; font-weight: bold; font-size: 18px; padding: 10px;');
-                
-                // Call handler directly without setTimeout
-                try {
-                  onViewResponse();
-                  
-                  // Log after handler is called
-                  console.log('%c onViewResponse handler has been called', 'background: #00ff00; color: #000000; font-size: 14px;');
-                } catch (error) {
-                  console.error('Error calling onViewResponse handler:', error);
-                }
-              } else {
-                console.error('%c NO onViewResponse HANDLER PROVIDED - USING DIRECT NAVIGATION', 'background: #ff0000; color: #ffffff; font-weight: bold; font-size: 18px; padding: 10px;');
-                // Direct navigation fallback
-                try {
-                  navigate(`/response-history?surveyId=${survey.id}`);
-                } catch (error) {
-                  console.error('Error using direct navigation:', error);
-                }
-              }
-            } else if (onStart) {
-              // For pending surveys
-              console.log('%c Executing onStart handler', 'background: #0000ff; color: #ffffff; font-size: 14px');
-              onStart();
-            }
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isSmall ? 1 : 2,
+            mt: 'auto',
           }}
         >
-          {isSubmitted ? 'View Response' : 'Start Survey'}
-        </Button>
-      </CardActions>
+          {isMobile ? (
+            <>
+              {survey.status !== 'Submitted' && user?.role !== 'admin' && (
+                <Tooltip title="Start Survey">
+                  <IconButton
+                    color="primary"
+                    onClick={handleStartSurvey}
+                    size={isSmall ? "small" : "medium"}
+                  >
+                    <PlayArrow />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {(survey.status === 'Submitted' || user?.role === 'admin') && (
+                <Tooltip title="View Responses">
+                  <IconButton
+                    color="primary"
+                    onClick={handleViewResponses}
+                    size={isSmall ? "small" : "medium"}
+                  >
+                    <Visibility />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </>
+          ) : (
+            <>
+              {survey.status !== 'Submitted' && user?.role !== 'admin' && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleStartSurvey}
+                  startIcon={<PlayArrow />}
+                  fullWidth
+                >
+                  Start Survey
+                </Button>
+              )}
+              {(survey.status === 'Submitted' || user?.role === 'admin') && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={handleViewResponses}
+                  startIcon={<Visibility />}
+                  fullWidth
+                >
+                  View Responses
+                </Button>
+              )}
+            </>
+          )}
+        </Box>
+      </CardContent>
     </Card>
   );
 }; 

@@ -16,6 +16,7 @@ import { SurveyModule } from './survey/survey.module';
 import { ResponsesModule } from './responses/responses.module';
 import { SeedModule } from './seed/seed.module';
 import { AdminModule } from './admin/admin.module';
+import { OpenAIService } from './services/openai.service';
 
 @Module({
   imports: [
@@ -43,5 +44,6 @@ import { AdminModule } from './admin/admin.module';
     SeedModule,      // Provides database seeding functionality
     AdminModule,     // Admin-specific features and analytics
   ],
+  providers: [OpenAIService],
 })
 export class AppModule {}

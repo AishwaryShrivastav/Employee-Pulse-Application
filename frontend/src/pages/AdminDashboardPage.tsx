@@ -20,7 +20,12 @@ import {
   TableRow,
   TablePagination,
   Chip,
-  LinearProgress
+  LinearProgress,
+  useTheme,
+  useMediaQuery,
+  Stack,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
@@ -28,7 +33,9 @@ import {
   People as PeopleIcon,
   CheckCircle as CheckCircleIcon,
   Timeline as TimelineIcon,
-  BarChart as BarChartIcon
+  BarChart as BarChartIcon,
+  Download as DownloadIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { SurveyResponse } from '../types';
@@ -41,7 +48,7 @@ import {
   LinearScale,
   BarElement,
   Title,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   ArcElement
 } from 'chart.js';
@@ -54,7 +61,7 @@ ChartJS.register(
   LinearScale,
   BarElement,
   Title,
-  Tooltip,
+  ChartTooltip,
   Legend,
   ArcElement
 );
@@ -103,6 +110,11 @@ interface ParticipationData {
  * visualize survey participation data, and manage responses.
  */
 export const AdminDashboardPage: React.FC = () => {
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.down('md'));
+  const isLarge = useMediaQuery(theme.breakpoints.down('lg'));
+  
   // User authentication context
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -276,322 +288,409 @@ export const AdminDashboardPage: React.FC = () => {
 
   return (
     <Layout>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Admin Dashboard
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Welcome back, {user?.name}. Here's an overview of your organization's pulse.
-          </Typography>
-        </Box>
-
+      <Container maxWidth={false} sx={{ py: isSmall ? 2 : 3 }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: isSmall ? 2 : 3,
+              fontSize: isSmall ? '0.875rem' : '1rem'
+            }}
+          >
             {error}
           </Alert>
         )}
 
-        {/* Key Metrics Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={2}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <DashboardIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Total Surveys
-                  </Typography>
-                </Box>
-                {metricsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Typography variant="h4" component="div">
-                    {metrics?.totalSurveys || 0}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+        {/* Action Buttons */}
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            gap: isSmall ? 1 : 2,
+            mb: isSmall ? 2 : 3,
+            flexDirection: isSmall ? 'column' : 'row',
+            alignItems: isSmall ? 'stretch' : 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <Typography 
+            variant={isSmall ? "h6" : "h5"} 
+            component="h1"
+            sx={{ fontWeight: 600 }}
+          >
+            Admin Dashboard
+          </Typography>
+          
+          <Stack 
+            direction={isSmall ? "column" : "row"} 
+            spacing={isSmall ? 1 : 2}
+            sx={{ 
+              width: isSmall ? '100%' : 'auto',
+            }}
+          >
+            {isSmall ? (
+              <>
+                <IconButton
+                  color="primary"
+                  onClick={handleSurveyManagement}
+                  sx={{ border: 1, borderColor: 'primary.main' }}
+                >
+                  <Tooltip title="Create Survey">
+                    <AddIcon />
+                  </Tooltip>
+                </IconButton>
+                <IconButton
+                  color="primary"
+                  onClick={handleExport}
+                  sx={{ border: 1, borderColor: 'primary.main' }}
+                >
+                  <Tooltip title="Export Responses">
+                    <DownloadIcon />
+                  </Tooltip>
+                </IconButton>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSurveyManagement}
+                  startIcon={<AddIcon />}
+                >
+                  Create Survey
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={handleExport}
+                  startIcon={<DownloadIcon />}
+                >
+                  Export Responses
+                </Button>
+              </>
+            )}
+          </Stack>
+        </Box>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={2}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <AssessmentIcon color="success" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Responses
-                  </Typography>
-                </Box>
-                {metricsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Typography variant="h4" component="div">
-                    {metrics?.totalResponses || 0}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+        {/* Metrics Cards */}
+        <Grid container spacing={isSmall ? 2 : 3} sx={{ mb: isSmall ? 2 : 3 }}>
+          {metricsLoading ? (
+            <Grid item xs={12}>
+              <LinearProgress />
+            </Grid>
+          ) : metrics && (
+            <>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card 
+                  elevation={2}
+                  sx={{
+                    height: '100%',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: isSmall ? 2 : 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <AssessmentIcon color="primary" sx={{ fontSize: isSmall ? 32 : 40 }} />
+                      <Box>
+                        <Typography variant="h4" component="div" sx={{ fontWeight: 600 }}>
+                          {metrics.totalSurveys}
+                        </Typography>
+                        <Typography color="text.secondary" variant={isSmall ? "body2" : "body1"}>
+                          Total Surveys
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={2}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PeopleIcon color="info" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Active Users
-                  </Typography>
-                </Box>
-                {metricsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Typography variant="h4" component="div">
-                    {metrics?.activeUsers || 0}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card 
+                  elevation={2}
+                  sx={{
+                    height: '100%',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: isSmall ? 2 : 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <PeopleIcon color="primary" sx={{ fontSize: isSmall ? 32 : 40 }} />
+                      <Box>
+                        <Typography variant="h4" component="div" sx={{ fontWeight: 600 }}>
+                          {metrics.activeUsers}
+                        </Typography>
+                        <Typography color="text.secondary" variant={isSmall ? "body2" : "body1"}>
+                          Active Users
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card elevation={2}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CheckCircleIcon color="warning" sx={{ mr: 1 }} />
-                  <Typography variant="h6" component="div">
-                    Participation
-                  </Typography>
-                </Box>
-                {metricsLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  <Box>
-                    <Typography variant="h4" component="div">
-                      {metrics?.participationRate || 0}%
-                    </Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={metrics?.participationRate || 0} 
-                      color="success"
-                      sx={{ mt: 1, height: 8, borderRadius: 4 }}
-                    />
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card 
+                  elevation={2}
+                  sx={{
+                    height: '100%',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: isSmall ? 2 : 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <CheckCircleIcon color="primary" sx={{ fontSize: isSmall ? 32 : 40 }} />
+                      <Box>
+                        <Typography variant="h4" component="div" sx={{ fontWeight: 600 }}>
+                          {metrics.totalResponses}
+                        </Typography>
+                        <Typography color="text.secondary" variant={isSmall ? "body2" : "body1"}>
+                          Total Responses
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <Card 
+                  elevation={2}
+                  sx={{
+                    height: '100%',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: isSmall ? 2 : 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <TimelineIcon color="primary" sx={{ fontSize: isSmall ? 32 : 40 }} />
+                      <Box>
+                        <Typography variant="h4" component="div" sx={{ fontWeight: 600 }}>
+                          {metrics.participationRate}%
+                        </Typography>
+                        <Typography color="text.secondary" variant={isSmall ? "body2" : "body1"}>
+                          Participation Rate
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </>
+          )}
         </Grid>
 
-        {/* Charts Section */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 3, height: '100%' }}>
-              <Typography variant="h6" gutterBottom>
-                <TimelineIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Participation Trend (Last 6 Months)
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              {graphLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : participationChartData ? (
-                <Box sx={{ height: 300 }}>
-                  <Bar 
-                    data={participationChartData} 
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                        },
-                        tooltip: {
-                          mode: 'index',
-                          intersect: false,
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                        },
-                      },
-                    }} 
-                  />
-                </Box>
-              ) : (
-                <Typography>No data available</Typography>
-              )}
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Grid container spacing={3} direction="column">
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    <BarChartIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Sentiment Analysis
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  {metricsLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                      <CircularProgress />
-                    </Box>
-                  ) : sentimentChartData ? (
-                    <Box sx={{ height: 200 }}>
-                      <Pie 
-                        data={sentimentChartData} 
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: 'bottom',
-                            },
-                          },
-                        }} 
-                      />
-                    </Box>
-                  ) : (
-                    <Typography>No data available</Typography>
-                  )}
-                </Paper>
-              </Grid>
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    <BarChartIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Response Distribution
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  {graphLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                      <CircularProgress />
-                    </Box>
-                  ) : responseDistributionData ? (
-                    <Box sx={{ height: 200 }}>
-                      <Pie 
-                        data={responseDistributionData} 
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: 'bottom',
-                            },
-                          },
-                        }} 
-                      />
-                    </Box>
-                  ) : (
-                    <Typography>No data available</Typography>
-                  )}
-                </Paper>
-              </Grid>
+        {/* Charts */}
+        <Grid container spacing={isSmall ? 2 : 3} sx={{ mb: isSmall ? 2 : 3 }}>
+          {graphLoading ? (
+            <Grid item xs={12}>
+              <LinearProgress />
             </Grid>
-          </Grid>
+          ) : (
+            <>
+              <Grid item xs={12} md={8}>
+                <Paper 
+                  elevation={2} 
+                  sx={{ 
+                    p: isSmall ? 2 : 3,
+                    height: '100%',
+                    minHeight: isSmall ? 300 : 400
+                  }}
+                >
+                  <Typography 
+                    variant={isSmall ? "subtitle1" : "h6"} 
+                    gutterBottom 
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Participation Trend
+                  </Typography>
+                  {graphData && (
+                    <Box sx={{ height: isSmall ? 250 : 350 }}>
+                      <Bar
+                        data={participationChartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: !isSmall,
+                            },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                font: {
+                                  size: isSmall ? 10 : 12,
+                                },
+                              },
+                            },
+                            x: {
+                              ticks: {
+                                font: {
+                                  size: isSmall ? 10 : 12,
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Paper 
+                  elevation={2} 
+                  sx={{ 
+                    p: isSmall ? 2 : 3,
+                    height: '100%',
+                    minHeight: isSmall ? 300 : 400
+                  }}
+                >
+                  <Typography 
+                    variant={isSmall ? "subtitle1" : "h6"} 
+                    gutterBottom 
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Sentiment Distribution
+                  </Typography>
+                  {metrics && sentimentChartData && (
+                    <Box 
+                      sx={{ 
+                        height: isSmall ? 250 : 350,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Pie
+                        data={sentimentChartData}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: isSmall ? 'bottom' : 'right',
+                              labels: {
+                                font: {
+                                  size: isSmall ? 10 : 12,
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Paper>
+              </Grid>
+            </>
+          )}
         </Grid>
 
         {/* Recent Responses Table */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">
-              Recent Survey Responses
-            </Typography>
-            <Box>
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                sx={{ mr: 1 }} 
-                onClick={handleSurveyManagement}
-              >
-                Manage Surveys
-              </Button>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleExport}
-              >
-                Export Data
-              </Button>
-            </Box>
-          </Box>
-          <Divider sx={{ mb: 2 }} />
-
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : responses.length > 0 ? (
-            <>
-              <TableContainer>
-                <Table sx={{ minWidth: 650 }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Survey</TableCell>
-                      <TableCell>User</TableCell>
-                      <TableCell>Submitted</TableCell>
-                      <TableCell>Answers</TableCell>
-                      <TableCell align="right">Actions</TableCell>
+        <Paper elevation={2} sx={{ width: '100%', overflow: 'hidden' }}>
+          <TableContainer sx={{ maxHeight: isSmall ? 350 : 400 }}>
+            <Table stickyHeader size={isSmall ? "small" : "medium"}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Survey</TableCell>
+                  {!isSmall && <TableCell sx={{ fontWeight: 600 }}>Respondent</TableCell>}
+                  <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                  {!isSmall && <TableCell sx={{ fontWeight: 600 }}>Submitted</TableCell>}
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      <CircularProgress size={24} />
+                    </TableCell>
+                  </TableRow>
+                ) : responses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      No responses found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  responses.map((response) => (
+                    <TableRow key={response._id} hover>
+                      <TableCell sx={{ maxWidth: isSmall ? 120 : 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {typeof response.surveyId === 'object' ? response.surveyId.title : 'Unknown Survey'}
+                      </TableCell>
+                      {!isSmall && (
+                        <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {response.userId.name}
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <Chip
+                          label={response.answers.length > 0 ? 'completed' : 'pending'}
+                          size={isSmall ? "small" : "medium"}
+                          color={response.answers.length > 0 ? 'success' : 'warning'}
+                        />
+                      </TableCell>
+                      {!isSmall && (
+                        <TableCell>
+                          {new Date(response.submittedAt).toLocaleDateString()}
+                        </TableCell>
+                      )}
+                      <TableCell align="right">
+                        {isSmall ? (
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleViewResponses(response.surveyId._id)}
+                          >
+                            <Tooltip title="View Details">
+                              <AssessmentIcon fontSize="small" />
+                            </Tooltip>
+                          </IconButton>
+                        ) : (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleViewResponses(response.surveyId._id)}
+                            startIcon={<AssessmentIcon />}
+                          >
+                            View
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {responses.map((response) => {
-                      const surveyTitle = typeof response.surveyId === 'object' 
-                        ? response.surveyId.title 
-                        : 'Unknown Survey';
-                      
-                      const userName = typeof response.userId === 'object' 
-                        ? response.userId.name 
-                        : 'Unknown User';
-                      
-                      return (
-                        <TableRow key={response._id} hover>
-                          <TableCell>{surveyTitle}</TableCell>
-                          <TableCell>{userName}</TableCell>
-                          <TableCell>
-                            {new Date(response.submittedAt || '').toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={`${response.answers.length} answers`} 
-                              size="small" 
-                              color="primary" 
-                              variant="outlined" 
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => typeof response.surveyId === 'object' 
-                                ? handleViewResponses(response.surveyId._id) 
-                                : handleViewResponses(response.surveyId)}
-                            >
-                              View Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={total}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-              />
-            </>
-          ) : (
-            <Alert severity="info">No survey responses found.</Alert>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={isSmall ? [5, 10] : [5, 10, 25]}
+            sx={{
+              '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                fontSize: isSmall ? '0.75rem' : '0.875rem',
+              },
+            }}
+          />
         </Paper>
       </Container>
     </Layout>

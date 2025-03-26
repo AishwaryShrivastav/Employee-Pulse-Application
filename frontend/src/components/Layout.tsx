@@ -19,6 +19,7 @@ import {
   useTheme,
   useMediaQuery,
   ListItemButton,
+  SwipeableDrawer,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -38,6 +39,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -79,8 +81,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const renderDrawer = (
-    <Box sx={{ width: 250 }} role="presentation">
-      <List>
+    <Box 
+      sx={{ 
+        width: isSmall ? '100vw' : 250,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+      }} 
+      role="presentation"
+    >
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Typography variant="h6" component="div">
+          Menu
+        </Typography>
+      </Box>
+      <List sx={{ flexGrow: 1 }}>
         {menuItems.map((item) => (
           <ListItem
             key={item.text}
@@ -90,9 +105,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               component={RouterLink}
               to={item.path}
               onClick={() => setDrawerOpen(false)}
+              sx={{
+                py: 2,
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+              }}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText 
+                primary={item.text}
+                primaryTypographyProps={{
+                  fontSize: isSmall ? '1.1rem' : 'inherit'
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
@@ -101,24 +127,36 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <AppBar position="fixed">
-        <Container maxWidth="xl">
-          <Toolbar disableGutters>
+    <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
+      <AppBar 
+        position="fixed"
+        sx={{
+          zIndex: theme.zIndex.drawer + 1,
+          boxShadow: isMobile ? 1 : 3
+        }}
+      >
+        <Container maxWidth={false}>
+          <Toolbar 
+            disableGutters 
+            sx={{ 
+              minHeight: isSmall ? 56 : 64,
+              px: isSmall ? 1 : 2
+            }}
+          >
             {isMobile && (
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
                 edge="start"
                 onClick={() => setDrawerOpen(true)}
-                sx={{ mr: 2 }}
+                sx={{ mr: isSmall ? 1 : 2 }}
               >
                 <MenuIcon />
               </IconButton>
             )}
 
             <Typography
-              variant="h6"
+              variant={isSmall ? "subtitle1" : "h6"}
               noWrap
               component={RouterLink}
               to="/"
@@ -127,13 +165,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 color: 'inherit',
                 textDecoration: 'none',
                 fontWeight: 700,
+                fontSize: isSmall ? '1.1rem' : 'inherit'
               }}
             >
               Employee Pulse
             </Typography>
 
             {!isMobile && (
-              <Box sx={{ flexGrow: 1, display: 'flex', gap: 2, ml: 4 }}>
+              <Box sx={{ 
+                flexGrow: 1, 
+                display: 'flex', 
+                gap: 3, 
+                ml: 4,
+                alignItems: 'center'
+              }}>
                 {menuItems.map((item) => (
                   <Typography
                     key={item.text}
@@ -142,7 +187,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     sx={{
                       color: 'inherit',
                       textDecoration: 'none',
-                      '&:hover': { opacity: 0.8 },
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      py: 0.5,
+                      borderBottom: '2px solid transparent',
+                      '&:hover': { 
+                        borderBottom: '2px solid',
+                        opacity: 0.9
+                      },
                     }}
                   >
                     {item.text}
@@ -153,8 +205,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <Box sx={{ flexGrow: 0 }}>
               <Tooltip title="Open settings">
-                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                <IconButton 
+                  onClick={handleOpenUserMenu} 
+                  sx={{ 
+                    p: isSmall ? 0.5 : 1,
+                    ml: isSmall ? 1 : 2
+                  }}
+                >
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: 'secondary.main',
+                      width: isSmall ? 32 : 40,
+                      height: isSmall ? 32 : 40
+                    }}
+                  >
                     {user?.name?.charAt(0) || 'U'}
                   </Avatar>
                 </IconButton>
@@ -174,18 +238,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }}
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    minWidth: 200,
+                    mt: 1.5
+                  }
+                }}
               >
                 <MenuItem onClick={handleCloseUserMenu}>
                   <ListItemIcon>
                     <Person fontSize="small" />
                   </ListItemIcon>
-                  <Typography textAlign="center">{user?.name}</Typography>
+                  <Typography>{user?.name}</Typography>
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>
                   <ListItemIcon>
                     <Logout fontSize="small" />
                   </ListItemIcon>
-                  <Typography textAlign="center">Logout</Typography>
+                  <Typography>Logout</Typography>
                 </MenuItem>
               </Menu>
             </Box>
@@ -193,22 +264,47 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </Container>
       </AppBar>
 
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        {renderDrawer}
-      </Drawer>
+      {isMobile ? (
+        <SwipeableDrawer
+          anchor={isSmall ? 'right' : 'left'}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onOpen={() => setDrawerOpen(true)}
+          SwipeAreaProps={{
+            sx: {
+              display: isSmall ? 'none' : 'auto'
+            }
+          }}
+        >
+          {renderDrawer}
+        </SwipeableDrawer>
+      ) : (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: 250,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: 250,
+              boxSizing: 'border-box',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+            },
+          }}
+        >
+          <Toolbar />
+          {renderDrawer}
+        </Drawer>
+      )}
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: '100%',
-          minHeight: '100vh',
-          pt: { xs: 8, sm: 9 },
+          p: isSmall ? 2 : 3,
+          width: isMobile ? '100%' : 'calc(100% - 250px)',
+          ml: isMobile ? 0 : '250px',
+          mt: isSmall ? '56px' : '64px'
         }}
       >
         {children}
