@@ -22,15 +22,30 @@ db = db.getSiblingDB('employee_pulse')
 const user1Id = new ObjectId();
 const user2Id = new ObjectId();
 const user3Id = new ObjectId();
+const adminId = new ObjectId();
 const surveyId = new ObjectId();
 
 try {
-  // Create sample users
+  // Create admin user first
+  db.users.insertOne({
+    _id: adminId,
+    name: "Admin User",
+    email: "admin@example.com",
+    // Using a pre-hashed password for 'admin123'
+    password: "$2b$10$K.0HwpsoPDGaB/atFBmmXOGTw4ceeg33.WrxJx/S6XxjJFJTau.K6",
+    role: "admin",
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+  // Create sample employee users
   db.users.insertMany([
     {
       _id: user1Id,
       name: "John Smith",
       email: "john.smith@example.com",
+      // Pre-hashed password for 'employee123'
+      password: "$2b$10$K.0HwpsoPDGaB/atFBmmXOGTw4ceeg33.WrxJx/S6XxjJFJTau.K6",
       role: "employee",
       createdAt: new Date(),
       updatedAt: new Date()
@@ -39,6 +54,7 @@ try {
       _id: user2Id,
       name: "Jane Doe",
       email: "jane.doe@example.com",
+      password: "$2b$10$K.0HwpsoPDGaB/atFBmmXOGTw4ceeg33.WrxJx/S6XxjJFJTau.K6",
       role: "employee",
       createdAt: new Date(),
       updatedAt: new Date()
@@ -47,6 +63,7 @@ try {
       _id: user3Id,
       name: "Bob Wilson",
       email: "bob.wilson@example.com",
+      password: "$2b$10$K.0HwpsoPDGaB/atFBmmXOGTw4ceeg33.WrxJx/S6XxjJFJTau.K6",
       role: "employee",
       createdAt: new Date(),
       updatedAt: new Date()

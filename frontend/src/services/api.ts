@@ -335,6 +335,12 @@ export const exportSurveyResponses = async (format: string): Promise<string> => 
   return response.data;
 };
 
+// Add AIInsights interface
+interface AIInsightsResponse {
+  insights: string;
+  isEnabled: boolean;
+}
+
 /**
  * Admin-specific API endpoints
  */
@@ -358,11 +364,29 @@ export const adminAPI = {
   },
 
   /**
-   * Get AI insights from survey responses
-   * @returns AI insights data
+   * Get AI-generated insights from survey responses
+   * @returns AIInsightsResponse containing insights and enabled status
    */
-  getAIInsights: async () => {
-    const response = await api.get('/admin/insights');
-    return response.data;
+  getAIInsights: async (): Promise<AIInsightsResponse> => {
+    try {
+      const response = await api.get('/admin/insights');
+      
+      // Validate response data
+      if (!response.data || typeof response.data.insights !== 'string' || typeof response.data.isEnabled !== 'boolean') {
+        console.error('Invalid AI insights response format:', response.data);
+        return {
+          insights: 'Error: Invalid response format',
+          isEnabled: false
+        };
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching AI insights:', error);
+      return {
+        insights: 'Error fetching insights. Please try again later.',
+        isEnabled: false
+      };
+    }
   },
 };
