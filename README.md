@@ -1,228 +1,250 @@
 # Employee Pulse Application
 
-A comprehensive employee survey and feedback management system with AI-powered insights.
+A modern employee feedback management system with AI-powered insights, built with React, NestJS, and MongoDB.
 
-## Features
+## 🌟 Key Features
 
-- 🔐 Secure authentication with JWT
-- 👥 Role-based access (Admin and Employee)
-- 📊 Survey creation and management
-- 📝 Employee feedback collection
-- 📈 Response analytics with AI insights
-- 🔄 Real-time updates
-- 📱 Responsive design
-- 🤖 OpenAI integration for survey insights
+### Survey Management
+- Create and manage customizable surveys
+- Multiple question types (rating, choice, text)
+- Survey templates and cloning
+- Automated survey distribution
 
-## Prerequisites
+### AI-Powered Insights
+- Real-time analysis of survey responses using OpenAI
+- Sentiment analysis and trend identification
+- Token-optimized processing
+- Actionable recommendations
 
-- Docker and Docker Compose
+### Analytics & Reporting
+- Interactive dashboards with real-time data
+- Visual representation of survey results
+- Response rate tracking
+- Data export capabilities
+
+### User Management
+- Role-based access control (Admin/Employee)
+- Secure JWT authentication
+- User profile management
+- Activity monitoring
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `/prd` directory:
+
+- [Product Requirements Document](./prd/Employee_Pulse_Application_PRD.md) - Complete feature specifications and requirements
+- [Technical Architecture](./prd/Technical_Architecture.md) - System design and component interactions
+- [Deployment Guide](./prd/Deployment_Guide.md) - Detailed setup and configuration instructions
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker 20.10.x or higher
+- Docker Compose 2.x or higher
 - Git
+- 4GB RAM minimum
 
-## Quick Start Deployment
+### Development Setup
 
-1. **Clone the repository**
+1. **Clone and Configure**
    ```bash
+   # Clone repository
    git clone https://github.com/yourusername/employee-pulse-application.git
    cd employee-pulse-application
-   ```
 
-2. **Configure environment variables**
-   ```bash
-   # Copy the example environment file
+   # Configure environment
    cp .env.example .env
    ```
 
-   Edit the `.env` file and set the following required variables:
+2. **Environment Configuration**
    ```env
-   # MongoDB configuration
+   # Required Configuration
    MONGODB_PORT=27017
    MONGO_INITDB_ROOT_USERNAME=admin
    MONGO_INITDB_ROOT_PASSWORD=secure_password_here
    MONGO_INITDB_DATABASE=employee_pulse
-
-   # Application ports
    BACKEND_PORT=3001
    FRONTEND_PORT=3000
-
-   # JWT configuration
    JWT_SECRET=your_secure_jwt_secret_key_here
-
-   # Domain configuration
    DOMAIN_NAME=localhost
 
-   # OpenAI configuration (optional - for AI insights)
+   # Optional: AI Insights Feature
    OPENAI_API_KEY=your_openai_api_key_here
    ```
 
-3. **Start the application**
+3. **Launch Application**
    ```bash
-   # Build and start all services
+   # Development mode with logs
+   docker-compose up --build
+
+   # Production mode (detached)
    docker-compose up --build -d
    ```
 
-   The application will be available at:
+4. **Access Applications**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001/api
+   - API Documentation: http://localhost:3001/api/docs
+   - Admin Dashboard: http://localhost:3000/admin
 
-4. **Default login credentials**
+### Default Accounts
+```
+Admin:
+- Email: admin@example.com
+- Password: admin123
 
-   Admin Account:
-   - Email: admin@example.com
-   - Password: admin123
-
-   Employee Account:
-   - Email: john@example.com
-   - Password: employee123
-
-## Docker Deployment Commands
-
-```bash
-# Start the application
-docker-compose up -d
-
-# Stop the application
-docker-compose down
-
-# View logs
-docker-compose logs -f
-
-# View specific service logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f mongodb
-
-# Rebuild and start
-docker-compose up --build -d
-
-# Remove all containers and volumes
-docker-compose down -v
+Employee:
+- Email: john@example.com
+- Password: employee123
 ```
 
-## Project Structure
+## 🐳 Docker Architecture
 
-```
-employee-pulse-application/
-├── frontend/                 # React frontend application
-│   ├── src/                 # Source code
-│   ├── Dockerfile          # Frontend container configuration
-│   └── package.json        # Frontend dependencies
-├── backend/                 # NestJS backend application
-│   ├── src/                # Source code
-│   ├── Dockerfile          # Backend container configuration
-│   └── package.json        # Backend dependencies
-├── .env                    # Environment variables
-├── .gitignore             # Git ignore rules
-├── docker-compose.yml      # Docker composition
-├── mongo-init.js          # MongoDB initialization script
-└── README.md              # Project documentation
-```
+### Container Services
 
-## Container Architecture
-
-The application runs three main containers:
-
-1. **Frontend Container (`employee-pulse-frontend`)**
-   - Nginx server hosting the React application
+1. **Frontend (`employee-pulse-frontend`)**
+   - Nginx-based React application
    - Port: 3000
-   - Built with Node.js 18 and Nginx Alpine
+   - Configuration: `frontend/nginx/nginx.conf`
 
-2. **Backend Container (`employee-pulse-backend`)**
-   - NestJS application
+2. **Backend (`employee-pulse-backend`)**
+   - NestJS API server
    - Port: 3001
-   - Built with Node.js 20
-   - Handles API requests and business logic
+   - Swagger docs at `/api/docs`
 
-3. **Database Container (`employee-pulse-mongodb`)**
+3. **Database (`employee-pulse-mongodb`)**
    - MongoDB instance
    - Port: 27017
-   - Persistent data storage
-   - Automatically initialized with required users and collections
+   - Persistent volume: `mongodb_data`
 
-## Data Persistence
+### Network Configuration
+- Network: `employee-pulse-network` (bridge)
+- Internal service discovery
+- Isolated container communication
 
-MongoDB data is persisted through a named volume:
-- `mongodb_data`: Stores the database files
+## 🛠️ Development Commands
 
-## Network Configuration
+```bash
+# Start all services
+docker-compose up --build
 
-All services run on a dedicated Docker network:
-- Network name: `employee-pulse-network`
-- Type: bridge network
-- Internal communication between services
+# Start specific service
+docker-compose up frontend --build
 
-## Security Notes
+# View logs
+docker-compose logs -f [service_name]
 
-1. **Environment Variables**
-   - Never commit the `.env` file
-   - Use strong passwords in production
-   - Change default admin credentials
+# Stop all services
+docker-compose down
+
+# Reset database
+docker-compose down -v
+
+# Run backend tests
+docker-compose exec backend npm test
+
+# Access MongoDB shell
+docker-compose exec mongodb mongosh -u admin -p secure_password_here
+```
+
+## 🔒 Security Best Practices
+
+1. **Environment Security**
+   - Never commit `.env` files
+   - Use strong passwords
+   - Rotate JWT secrets regularly
 
 2. **API Security**
-   - All endpoints are JWT protected
-   - Role-based access control implemented
+   - JWT authentication
+   - Role-based access control
    - Rate limiting enabled
+   - Input validation
 
 3. **Database Security**
-   - MongoDB authentication required
-   - Secure password storage with hashing
-   - Access restricted to container network
+   - Strong authentication required
+   - Encrypted connections
+   - Regular backups
+   - Access logging
 
-## Troubleshooting
+## ⚡ Performance Optimization
 
-1. **Container Issues**
+1. **Frontend**
+   - React component optimization
+   - Lazy loading for routes
+   - Caching strategies
+   - Compressed static assets
+
+2. **Backend**
+   - Response caching
+   - Database query optimization
+   - Connection pooling
+   - Rate limiting
+
+3. **Database**
+   - Proper indexing
+   - Query optimization
+   - Regular maintenance
+   - Monitoring
+
+## 🔍 Troubleshooting Guide
+
+### Common Issues
+
+1. **Container Startup Failures**
    ```bash
    # Check container status
    docker-compose ps
-
-   # Check container logs
-   docker-compose logs
-
-   # Restart specific service
-   docker-compose restart [service_name]
+   
+   # View detailed logs
+   docker-compose logs -f
    ```
 
-2. **Database Issues**
-   ```bash
-   # Reset database
-   docker-compose down -v
-   docker-compose up -d
-   ```
+2. **Database Connection Issues**
+   - Verify MongoDB credentials in `.env`
+   - Check network connectivity
+   - Ensure volume permissions
 
-3. **Common Problems**
-   - Port conflicts: Change ports in `.env` file
-   - Database connection: Check MongoDB credentials
-   - API errors: Check backend logs
+3. **API Errors**
+   - Check backend logs
+   - Verify JWT configuration
+   - Validate API endpoints
 
-## Production Deployment Notes
+### Health Checks
+```bash
+# Check frontend
+curl http://localhost:3000
 
-1. **SSL/TLS Configuration**
+# Check backend health
+curl http://localhost:3001/health
+
+# Check MongoDB connection
+docker-compose exec mongodb mongosh --eval "db.runCommand({ ping: 1 })"
+```
+
+## 📦 Production Deployment
+
+1. **SSL Configuration**
+   - Update `nginx.conf` with SSL settings
    - Configure SSL certificates
-   - Update Nginx configuration
-   - Enable HTTPS
+   - Enable HTTPS redirects
 
-2. **Backup Strategy**
+2. **Environment Setup**
+   - Use production-grade passwords
+   - Configure proper logging
+   - Set up monitoring
+
+3. **Backup Strategy**
    - Regular database backups
-   - Volume backup plan
-   - Monitoring setup
+   - Configuration backups
+   - Automated backup testing
 
-3. **Performance Optimization**
-   - Enable Nginx caching
-   - Configure MongoDB indexes
-   - Optimize Docker images
+## 🤝 Contributing
 
-## Support and Updates
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-For support, please open an issue in the GitHub repository. For updates and improvements:
+## 📄 License
 
-1. **Update Application**
-   ```bash
-   git pull
-   docker-compose down
-   docker-compose up --build -d
-   ```
-
-2. **Backup Before Update**
-   ```bash
-   # Backup MongoDB data
-   docker-compose exec -T mongodb mongodump --archive > backup.archive
-   ``` 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
