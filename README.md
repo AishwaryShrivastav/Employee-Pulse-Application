@@ -1,215 +1,228 @@
 # Employee Pulse Application
 
-A full-stack application for managing employee surveys and feedback.
+A comprehensive employee survey and feedback management system with AI-powered insights.
+
+## Features
+
+- 🔐 Secure authentication with JWT
+- 👥 Role-based access (Admin and Employee)
+- 📊 Survey creation and management
+- 📝 Employee feedback collection
+- 📈 Response analytics with AI insights
+- 🔄 Real-time updates
+- 📱 Responsive design
+- 🤖 OpenAI integration for survey insights
 
 ## Prerequisites
 
-- Node.js (v18 or higher)
-- MongoDB (v6 or higher)
-- npm or yarn
-- Docker and Docker Compose (for containerized deployment)
+- Docker and Docker Compose
+- Git
 
-## Development Setup
+## Quick Start Deployment
 
-### Option 1: Local Development (Faster for Testing)
-
-1. **Install Dependencies**
+1. **Clone the repository**
    ```bash
-   npm run install:all
+   git clone https://github.com/yourusername/employee-pulse-application.git
+   cd employee-pulse-application
    ```
 
-2. **Setup MongoDB**
-   - Create a data directory for MongoDB:
-     ```bash
-     mkdir -p data/db
-     ```
-   - Start MongoDB (in a separate terminal):
-     ```bash
-     npm run start:mongodb
-     ```
-   - Or use your existing MongoDB installation (make sure it's running on mongodb://localhost:27017)
-
-3. **Start the Application**
-   
-   a. Full Development Stack:
+2. **Configure environment variables**
    ```bash
-   npm run dev
-   ```
-   This will start MongoDB, backend, and frontend concurrently.
-
-   b. Quick Development (if MongoDB is already running):
-   ```bash
-   npm run dev:quick
-   ```
-   This will only start the backend and frontend.
-
-4. **Seed the Database**
-   ```bash
-   npm run seed:db
+   # Copy the example environment file
+   cp .env.example .env
    ```
 
-### Option 2: Docker Development
+   Edit the `.env` file and set the following required variables:
+   ```env
+   # MongoDB configuration
+   MONGODB_PORT=27017
+   MONGO_INITDB_ROOT_USERNAME=admin
+   MONGO_INITDB_ROOT_PASSWORD=secure_password_here
+   MONGO_INITDB_DATABASE=employee_pulse
 
-1. **Start with Docker Compose**
-   ```bash
-   npm start
+   # Application ports
+   BACKEND_PORT=3001
+   FRONTEND_PORT=3000
+
+   # JWT configuration
+   JWT_SECRET=your_secure_jwt_secret_key_here
+
+   # Domain configuration
+   DOMAIN_NAME=localhost
+
+   # OpenAI configuration (optional - for AI insights)
+   OPENAI_API_KEY=your_openai_api_key_here
    ```
-   Or to rebuild containers:
+
+3. **Start the application**
    ```bash
-   npm run start:build
+   # Build and start all services
+   docker-compose up --build -d
    ```
 
-## Access the Application
+   The application will be available at:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001/api
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- API Documentation: http://localhost:5000/api
+4. **Default login credentials**
 
-## Default Login Credentials
-
-1. **Admin Account**
+   Admin Account:
    - Email: admin@example.com
    - Password: admin123
 
-2. **Employee Account**
+   Employee Account:
    - Email: john@example.com
    - Password: employee123
+
+## Docker Deployment Commands
+
+```bash
+# Start the application
+docker-compose up -d
+
+# Stop the application
+docker-compose down
+
+# View logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f mongodb
+
+# Rebuild and start
+docker-compose up --build -d
+
+# Remove all containers and volumes
+docker-compose down -v
+```
 
 ## Project Structure
 
 ```
 employee-pulse-application/
-├── frontend/          # React frontend
-├── backend/           # NestJS backend
-├── data/             # MongoDB data directory
-└── docker-compose.yml # Docker composition
+├── frontend/                 # React frontend application
+│   ├── src/                 # Source code
+│   ├── Dockerfile          # Frontend container configuration
+│   └── package.json        # Frontend dependencies
+├── backend/                 # NestJS backend application
+│   ├── src/                # Source code
+│   ├── Dockerfile          # Backend container configuration
+│   └── package.json        # Backend dependencies
+├── .env                    # Environment variables
+├── .gitignore             # Git ignore rules
+├── docker-compose.yml      # Docker composition
+├── mongo-init.js          # MongoDB initialization script
+└── README.md              # Project documentation
 ```
 
-## Environment Variables
+## Container Architecture
 
-The application uses the following environment variables:
+The application runs three main containers:
 
-### Backend (.env)
-```
-MONGODB_URI=mongodb://localhost:27017/employee-pulse
-JWT_SECRET=your-secret-key
-```
+1. **Frontend Container (`employee-pulse-frontend`)**
+   - Nginx server hosting the React application
+   - Port: 3000
+   - Built with Node.js 18 and Nginx Alpine
 
-### Frontend (.env)
-```
-REACT_APP_API_URL=http://localhost:5000
-```
+2. **Backend Container (`employee-pulse-backend`)**
+   - NestJS application
+   - Port: 3001
+   - Built with Node.js 20
+   - Handles API requests and business logic
 
-## Features
+3. **Database Container (`employee-pulse-mongodb`)**
+   - MongoDB instance
+   - Port: 27017
+   - Persistent data storage
+   - Automatically initialized with required users and collections
 
-- User authentication with JWT
-- Role-based access control (Admin, HR, Employee)
-- Survey creation and management
-- Employee feedback collection
-- Response analytics and export
-- Real-time updates
-- Swagger API documentation
+## Data Persistence
 
-## Tech Stack
+MongoDB data is persisted through a named volume:
+- `mongodb_data`: Stores the database files
 
-### Backend
-- NestJS (Node.js framework)
-- MongoDB with Mongoose
-- JWT Authentication
-- Jest for testing
-- Swagger/OpenAPI documentation
+## Network Configuration
 
-### Frontend
-- React with TypeScript
-- Tailwind CSS for styling
-- Axios for API communication
-- React Router for navigation
+All services run on a dedicated Docker network:
+- Network name: `employee-pulse-network`
+- Type: bridge network
+- Internal communication between services
 
-### Infrastructure
-- Docker and Docker Compose
-- MongoDB
-- Node.js
+## Security Notes
 
-## Development
+1. **Environment Variables**
+   - Never commit the `.env` file
+   - Use strong passwords in production
+   - Change default admin credentials
 
-### Running Tests
-```bash
-# Backend tests
-cd backend
-npm test
+2. **API Security**
+   - All endpoints are JWT protected
+   - Role-based access control implemented
+   - Rate limiting enabled
 
-# Frontend tests
-cd frontend
-npm test
-```
+3. **Database Security**
+   - MongoDB authentication required
+   - Secure password storage with hashing
+   - Access restricted to container network
 
-### API Documentation
-Once the application is running, you can access the Swagger API documentation at:
-http://localhost:3001/api/docs
+## Troubleshooting
 
-### Code Quality
+1. **Container Issues**
+   ```bash
+   # Check container status
+   docker-compose ps
 
-The project uses ESLint and Prettier for code quality and formatting:
+   # Check container logs
+   docker-compose logs
 
-```bash
-# Run linting
-npm run lint
+   # Restart specific service
+   docker-compose restart [service_name]
+   ```
 
-# Fix linting issues
-npm run lint:fix
+2. **Database Issues**
+   ```bash
+   # Reset database
+   docker-compose down -v
+   docker-compose up -d
+   ```
 
-# Format code
-npm run format
-```
+3. **Common Problems**
+   - Port conflicts: Change ports in `.env` file
+   - Database connection: Check MongoDB credentials
+   - API errors: Check backend logs
 
-You can also run these commands for specific parts of the project:
+## Production Deployment Notes
 
-```bash
-# Backend only
-npm run lint:backend
-npm run lint:fix:backend
-npm run format:backend
+1. **SSL/TLS Configuration**
+   - Configure SSL certificates
+   - Update Nginx configuration
+   - Enable HTTPS
 
-# Frontend only
-npm run lint:frontend
-npm run lint:fix:frontend
-npm run format:frontend
-```
+2. **Backup Strategy**
+   - Regular database backups
+   - Volume backup plan
+   - Monitoring setup
 
-ESLint is configured with:
-- TypeScript support
-- React best practices
-- Prettier integration
-- Strict type checking
-- Common code style rules
+3. **Performance Optimization**
+   - Enable Nginx caching
+   - Configure MongoDB indexes
+   - Optimize Docker images
 
-## Contributing
+## Support and Updates
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+For support, please open an issue in the GitHub repository. For updates and improvements:
 
-## Testing
+1. **Update Application**
+   ```bash
+   git pull
+   docker-compose down
+   docker-compose up --build -d
+   ```
 
-The application includes comprehensive test coverage:
-- Unit tests for all backend services
-- Integration tests for API endpoints
-- Frontend component testing
-- End-to-end testing
-
-Run the test suites:
-```bash
-# Backend tests with coverage
-cd backend
-npm run test:cov
-
-# Frontend tests
-cd frontend
-npm test
-```
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+2. **Backup Before Update**
+   ```bash
+   # Backup MongoDB data
+   docker-compose exec -T mongodb mongodump --archive > backup.archive
+   ``` 

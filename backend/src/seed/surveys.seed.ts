@@ -203,6 +203,143 @@ export class SurveysSeedService {
         dueDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
         submittedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // Submitted 15 days ago
       },
+      // New open surveys
+      {
+        title: 'Remote Work Experience Survey',
+        description: 'Help us understand your remote work experience and needs',
+        questions: [
+          {
+            text: 'How productive do you feel working remotely?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What remote work tools would improve your productivity?',
+            type: 'text',
+            required: false,
+          },
+          {
+            text: 'How well do you maintain work-life balance when working remotely?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What challenges do you face with remote work?',
+            type: 'text',
+            required: true,
+          }
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000), // 20 days from now
+      },
+      {
+        title: 'Mental Health and Wellness Survey',
+        description: 'Help us support your mental health and well-being',
+        questions: [
+          {
+            text: 'How would you rate your current stress levels?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'Do you feel you have a good work-life balance?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What wellness programs would you be interested in?',
+            type: 'text',
+            required: false,
+          },
+          {
+            text: 'How supported do you feel by your team during challenging times?',
+            type: 'rating',
+            required: true,
+          }
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
+      },
+      {
+        title: 'Professional Development Goals',
+        description: 'Share your career aspirations and development needs',
+        questions: [
+          {
+            text: 'What skills would you like to develop in the next 6 months?',
+            type: 'text',
+            required: true,
+          },
+          {
+            text: 'How satisfied are you with your current growth opportunities?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What type of training would be most beneficial for you?',
+            type: 'choice',
+            options: ['Technical Skills', 'Leadership', 'Soft Skills', 'Industry Knowledge'],
+            required: true,
+          }
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), // 25 days from now
+      },
+      {
+        title: 'Office Equipment and Ergonomics',
+        description: 'Help us ensure you have the right equipment for comfortable work',
+        questions: [
+          {
+            text: 'How comfortable is your current work setup?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What equipment would improve your work setup?',
+            type: 'text',
+            required: true,
+          },
+          {
+            text: 'Do you experience any physical discomfort while working?',
+            type: 'rating',
+            required: true,
+          }
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000), // 12 days from now
+      },
+      {
+        title: 'Team Communication Feedback',
+        description: 'Help us improve team communication and collaboration',
+        questions: [
+          {
+            text: 'How effective are our current communication channels?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What communication tools would you recommend?',
+            type: 'text',
+            required: false,
+          },
+          {
+            text: 'How satisfied are you with the frequency of team meetings?',
+            type: 'rating',
+            required: true,
+          },
+          {
+            text: 'What suggestions do you have for improving team collaboration?',
+            type: 'text',
+            required: true,
+          }
+        ],
+        isActive: true,
+        status: 'Pending',
+        dueDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000), // 18 days from now
+      }
     ];
 
     const createdSurveys = await this.surveyModel.insertMany(surveys);
