@@ -49,7 +49,7 @@ Comprehensive documentation is available in the `/prd` directory:
 1. **Clone and Configure**
    ```bash
    # Clone repository
-   git clone https://github.com/yourusername/employee-pulse-application.git
+   git clone https://github.com/AishwaryShrivastav/Employee-Pulse-Application.git
    cd employee-pulse-application
 
    # Configure environment
