@@ -52,6 +52,7 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
+import AIInsights from '../components/admin/AIInsights';
 
 /**
  * Register required ChartJS components for visualizations
@@ -288,30 +289,17 @@ export const AdminDashboardPage: React.FC = () => {
 
   return (
     <Layout>
-      <Container maxWidth={false} sx={{ py: isSmall ? 2 : 3 }}>
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              mb: isSmall ? 2 : 3,
-              fontSize: isSmall ? '0.875rem' : '1rem'
-            }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {/* Action Buttons */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            gap: isSmall ? 1 : 2,
-            mb: isSmall ? 2 : 3,
-            flexDirection: isSmall ? 'column' : 'row',
-            alignItems: isSmall ? 'stretch' : 'center',
-            justifyContent: 'space-between'
-          }}
-        >
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AIInsights />
+        
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: isSmall ? 2 : 3,
+          flexDirection: isSmall ? 'column' : 'row',
+          gap: isSmall ? 2 : 0
+        }}>
           <Typography 
             variant={isSmall ? "h6" : "h5"} 
             component="h1"

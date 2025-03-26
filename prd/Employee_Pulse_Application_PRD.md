@@ -30,9 +30,10 @@ To create a streamlined, user-friendly platform that promotes regular feedback c
 1. **Survey Management:** Create, edit, and manage customizable surveys
 2. **Response Collection:** Secure and anonymous feedback collection
 3. **Analytics Dashboard:** Visual representation of survey results and trends
-4. **User Management:** Role-based access control with different permission levels
-5. **Notification System:** Automated reminders for survey completion
-6. **Data Export:** Export survey data for external analysis
+4. **AI-Powered Insights:** Automated analysis of survey responses using OpenAI
+5. **User Management:** Role-based access control with different permission levels
+6. **Notification System:** Automated reminders for survey completion
+7. **Data Export:** Export survey data for external analysis
 
 ### 2.3 User Roles
 1. **Administrator:** Full access to all features, including user management, survey creation, and analytics
@@ -88,11 +89,16 @@ To create a streamlined, user-friendly platform that promotes regular feedback c
 - Overview of survey completion rates
 - Response statistics and trends
 - Visual representations of results
+- AI-generated insights on employee sentiment
 
-#### 3.4.2 Detailed Analysis
-- Question-level response breakdowns
-- Comparative analysis across time periods
-- Filtering and sorting capabilities
+#### 3.4.2 AI Insights
+- Real-time analysis of survey responses using OpenAI
+- Sentiment analysis of employee feedback
+- Identification of key trends and patterns
+- Actionable recommendations based on feedback
+- Token-optimized processing for large datasets
+- Automatic handling of API rate limits
+- Fallback mechanisms for service unavailability
 
 #### 3.4.3 Export Options
 - Export to CSV for further analysis
@@ -126,6 +132,7 @@ To create a streamlined, user-friendly platform that promotes regular feedback c
 - **Framework:** NestJS (Node.js)
 - **API Design:** RESTful endpoints with versioning
 - **Authentication:** JWT-based with Passport.js strategies
+- **AI Integration:** OpenAI API for automated insights
 - **Documentation:** Swagger/OpenAPI for API documentation
 - **Validation:** Class-validator for input validation
 - **Error Handling:** Global exception filter with standardized error responses
@@ -152,6 +159,7 @@ To create a streamlined, user-friendly platform that promotes regular feedback c
 - NestJS 9.x
 - TypeScript 4.x
 - MongoDB 6.x with Mongoose
+- OpenAI API for AI insights
 - Passport.js for authentication
 - bcrypt for password hashing
 - class-validator and class-transformer for DTO validation
@@ -181,6 +189,7 @@ To create a streamlined, user-friendly platform that promotes regular feedback c
 - `DELETE /api/surveys/:id` - Delete survey (admin only)
 - `GET /api/surveys/available` - Get surveys available to current user
 - `GET /api/surveys/admin/list` - Get all surveys with statistics (admin only)
+- `GET /api/surveys/insights` - Get AI-generated insights from survey responses (admin only)
 
 #### 4.3.3 Response Endpoints
 - `POST /api/responses` - Submit survey response

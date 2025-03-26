@@ -63,21 +63,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: <Dashboard />,
       path: user?.role === 'admin' ? '/admin' : '/dashboard',
     },
-    ...(user?.role === 'admin'
-      ? [
-          {
-            text: 'Surveys',
-            icon: <Assessment />,
-            path: '/survey-management',
-          },
-        ]
-      : [
-          {
-            text: 'Response History',
-            icon: <Assessment />,
-            path: '/response-history',
-          },
-        ]),
   ];
 
   const renderDrawer = (
@@ -159,7 +144,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               variant={isSmall ? "subtitle1" : "h6"}
               noWrap
               component={RouterLink}
-              to="/"
+              to={user?.role === 'admin' ? '/admin' : '/dashboard'}
               sx={{
                 flexGrow: 1,
                 color: 'inherit',
@@ -172,35 +157,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Typography>
 
             {!isMobile && (
-              <Box sx={{ 
-                flexGrow: 1, 
-                display: 'flex', 
-                gap: 3, 
-                ml: 4,
-                alignItems: 'center'
-              }}>
-                {menuItems.map((item) => (
-                  <Typography
-                    key={item.text}
-                    component={RouterLink}
-                    to={item.path}
-                    sx={{
-                      color: 'inherit',
-                      textDecoration: 'none',
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      py: 0.5,
-                      borderBottom: '2px solid transparent',
-                      '&:hover': { 
-                        borderBottom: '2px solid',
-                        opacity: 0.9
-                      },
-                    }}
-                  >
-                    {item.text}
-                  </Typography>
-                ))}
-              </Box>
+              <Box sx={{ flexGrow: 1 }} />
             )}
 
             <Box sx={{ flexGrow: 0 }}>

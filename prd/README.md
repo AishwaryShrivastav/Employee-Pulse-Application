@@ -1,6 +1,37 @@
-# Employee Pulse Application - Documentation
+# Employee Pulse Application Documentation
 
-This directory contains comprehensive documentation for the Employee Pulse Application. These documents are designed to provide detailed information about the application's requirements, architecture, and deployment processes.
+This directory contains comprehensive documentation for the Employee Pulse Application, including product requirements, technical specifications, and deployment guides.
+
+## Key Documents
+
+1. **Employee_Pulse_Application_PRD.md**
+   - Complete product requirements
+   - Feature specifications
+   - User roles and permissions
+   - **New: AI-powered insights feature**
+
+2. **Technical_Architecture.md**
+   - System architecture
+   - Technology stack
+   - Data models
+   - API specifications
+   - **New: AI insights architecture**
+
+3. **Deployment_Guide.md**
+   - Installation instructions
+   - Configuration steps
+   - Environment setup
+   - **New: OpenAI API configuration**
+
+## Recent Updates
+
+### AI Insights Feature (Latest)
+- Added OpenAI integration for automated survey analysis
+- Implemented token management and rate limiting
+- Added error handling and fallback mechanisms
+- Updated admin dashboard with AI-generated insights
+
+### Previous Updates
 
 ## Document Overview
 

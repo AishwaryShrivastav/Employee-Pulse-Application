@@ -225,4 +225,51 @@
                                     │ questionIndex: Number│
                                     │ value: String  │
                                     └────────────────┘
+```
+
+## AI Insights Architecture
+
+### Overview
+The AI insights feature uses OpenAI's GPT-3.5-turbo model to analyze survey responses and generate actionable insights for administrators. The implementation follows best practices for token management, error handling, and rate limiting.
+
+### Components
+
+#### OpenAI Service
+- Initialization with environment-based API key configuration
+- Token limit management (4096 tokens for GPT-3.5-turbo)
+- Response processing with configurable limits:
+  - Maximum of 10 responses per analysis
+  - Feedback text truncation to 200 characters
+  - Reserved tokens for AI response (100 tokens)
+
+#### Data Processing
+- Survey response filtering and sorting
+- Recent-first analysis prioritization
+- Automatic data reduction for token limit compliance
+- Structured data preparation with ProcessedSurveyData interface
+
+#### Error Handling
+- API quota management
+- Token limit exceeded scenarios
+- Service initialization failures
+- Network and API errors
+- Graceful degradation with informative messages
+
+#### Integration Points
+- Admin dashboard integration
+- Real-time insight generation
+- Caching mechanisms (planned)
+- Rate limiting controls
+
+### Security Considerations
+- API key management through environment variables
+- Input sanitization before API calls
+- Error message sanitization
+- Rate limiting implementation
+
+### Performance Optimization
+- Token estimation for request optimization
+- Batch processing of survey responses
+- Data truncation strategies
+- Response caching (planned)
 ``` 

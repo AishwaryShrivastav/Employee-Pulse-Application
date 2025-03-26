@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, CircularProgress } from '@mui/material';
+import { Card, CardContent, Typography, CircularProgress, Alert } from '@mui/material';
 import { AutoGraph as InsightIcon } from '@mui/icons-material';
-import axios from 'axios';
+import { adminAPI } from '../../services/api';
 
 interface AIInsightsResponse {
   insights: string;
@@ -17,16 +17,16 @@ const AIInsights: React.FC = () => {
   useEffect(() => {
     const fetchInsights = async () => {
       try {
-        const response = await axios.get<AIInsightsResponse>('/api/admin/insights', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        setInsights(response.data.insights);
-        setIsEnabled(response.data.isEnabled);
-        setLoading(false);
+        setLoading(true);
+        setError('');
+        const response = await adminAPI.getAIInsights();
+        setInsights(response.insights);
+        setIsEnabled(response.isEnabled);
       } catch (err) {
-        setError('Failed to fetch AI insights');
+        console.error('Failed to fetch AI insights:', err);
+        setError('Failed to fetch AI insights. Please try again later.');
+        setIsEnabled(true); // Keep component visible when there's a temporary error
+      } finally {
         setLoading(false);
       }
     };
@@ -35,7 +35,19 @@ const AIInsights: React.FC = () => {
   }, []);
 
   if (!isEnabled) {
-    return null;
+    return (
+      <Card sx={{ mb: 3, background: '#f8f9fa' }}>
+        <CardContent>
+          <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <InsightIcon sx={{ mr: 1 }} color="primary" />
+            AI Insights
+          </Typography>
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {insights || 'AI insights are temporarily disabled. Please try again later.'}
+          </Alert>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -49,7 +61,13 @@ const AIInsights: React.FC = () => {
         {loading ? (
           <CircularProgress size={20} sx={{ ml: 2 }} />
         ) : error ? (
-          <Typography color="error">{error}</Typography>
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        ) : insights === 'No survey responses available for analysis.' ? (
+          <Typography variant="body1" color="text.secondary">
+            No survey responses available yet. AI insights will be generated automatically once employees start submitting their responses.
+          </Typography>
         ) : (
           <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
             {insights}

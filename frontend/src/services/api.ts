@@ -356,4 +356,13 @@ export const adminAPI = {
     const response = await api.get('/admin/survey-participation-graph');
     return response.data;
   },
+
+  /**
+   * Get AI insights from survey responses
+   * @returns AI insights data
+   */
+  getAIInsights: async () => {
+    const response = await api.get('/admin/insights');
+    return response.data;
+  },
 };
