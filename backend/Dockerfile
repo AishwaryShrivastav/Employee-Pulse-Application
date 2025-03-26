@@ -1,4 +1,11 @@
-FROM node:20-slim AS builder
+# Build stage
+FROM node:20-slim as builder
+
+# Build arguments
+ARG NODE_ENV=production
+
+# Set environment variables
+ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /app
 
@@ -15,8 +22,11 @@ RUN npm run build
 # Production stage
 FROM node:20-slim
 
-# Set node to production mode
-ENV NODE_ENV=production
+# Build arguments
+ARG NODE_ENV=production
+
+# Set environment variables
+ENV NODE_ENV=${NODE_ENV}
 
 # Create app directory
 WORKDIR /app
@@ -25,9 +35,22 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
+COPY .env* ./
+COPY tsconfig*.json ./
+COPY src ./src
+
+# Copy wait-for-db script
+COPY scripts/wait-for-db.sh ./wait-for-db.sh
+RUN chmod +x ./wait-for-db.sh
+
+# Install netcat for the wait-for-db script and ts-node for seeding
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    netcat-openbsd \
+    && npm install -g ts-node typescript \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user and grant necessary permissions
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init && \
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     useradd -m nodeuser && \
@@ -39,12 +62,5 @@ USER nodeuser
 # Expose the application port
 EXPOSE 3001
 
-# Use dumb-init as the entry point to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start the application
-CMD ["node", "dist/main"]
-
-# Set health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1 
+# Use wait-for-db script as entrypoint
+CMD ["./wait-for-db.sh"] 

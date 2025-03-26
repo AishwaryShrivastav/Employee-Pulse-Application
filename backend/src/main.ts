@@ -53,7 +53,7 @@ async function bootstrap() {
   // Start the server on the specified port (default: 3000)
   // Uses environment variable PORT if available
   const port = process.env.PORT ?? 3001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: http://localhost:${port}/api`);
 }
 

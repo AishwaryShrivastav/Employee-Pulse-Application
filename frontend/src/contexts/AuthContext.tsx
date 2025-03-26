@@ -18,7 +18,7 @@ interface AuthContextType {
 }
 
 // Create the context with undefined as initial value
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Custom hook to use the auth context
 export const useAuth = () => {

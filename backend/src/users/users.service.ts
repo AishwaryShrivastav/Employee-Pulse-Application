@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
+import { User, UserRole } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +20,7 @@ export class UsersService {
   }
 
   async findOneByEmail(email: string): Promise<User> {
-    const user = await this.userModel.findOne({ email }).exec();
+    const user = await this.userModel.findOne({ email });
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
@@ -48,5 +49,28 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
+  }
+
+  async createTestUser(): Promise<User> {
+    const email = 'admin@example.com';
+    const password = 'password123';
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Check if test user already exists
+    const existingUser = await this.userModel.findOne({ email }).exec();
+    if (existingUser) {
+      console.log('Test user already exists');
+      return existingUser;
+    }
+
+    // Create new test user with correct enum value
+    const testUser = new this.userModel({
+      name: 'Test Admin',
+      email,
+      password: hashedPassword,
+      role: UserRole.ADMIN // Using the enum value which is 'admin'
+    });
+
+    return testUser.save();
   }
 }

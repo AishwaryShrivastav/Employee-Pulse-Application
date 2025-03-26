@@ -6,51 +6,41 @@ version: '3.8'
 services:
   # MongoDB database service
   mongodb:
-    image: mongo:latest    # Use the latest MongoDB image from Docker Hub
+    image: mongo:6.0
     container_name: employee-pulse-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"      # Map container port 27017 to host port 27017
+      - "${MONGODB_PORT}:27017"
     volumes:
       - mongodb_data:/data/db    # Persist MongoDB data in a named volume
     networks:
       - employee-pulse-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
 
   # Backend NestJS API service
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${NODE_ENV}
     container_name: employee-pulse-backend
     restart: unless-stopped
     ports:
-      - "3001:3001"        # Map container port 3001 to host port 3001
+      - "${BACKEND_PORT}:3001"
     environment:
-      # Environment variables for the backend service
-      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME:+${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@}mongodb:27017/employee-pulse${MONGO_INITDB_ROOT_USERNAME:+?authSource=admin}
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key}
-      - PORT=3001                                         # Port on which the backend server listens
-      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_ENV=${NODE_ENV}
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
+      - CORS_ORIGIN=http://${DOMAIN_NAME}:${FRONTEND_PORT}
     depends_on:
-      mongodb:
-        condition: service_healthy
+      - mongodb
     networks:
       - employee-pulse-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
 
   # Frontend React application service
   frontend:
@@ -58,22 +48,19 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3001/api}
+        - REACT_APP_API_URL=http://${DOMAIN_NAME}:${BACKEND_PORT}/api
+        - NODE_ENV=${NODE_ENV}
     container_name: employee-pulse-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT}:80"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${FRONTEND_PORT}
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - employee-pulse-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
 
 # Define networks for service isolation
 networks:

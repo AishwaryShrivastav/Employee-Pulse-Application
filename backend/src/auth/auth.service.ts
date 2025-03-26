@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -26,22 +26,36 @@ export class AuthService {
    */
   async validateUser(email: string, pass: string): Promise<Omit<User, 'password'> | null> {
     try {
-      const user = await this.usersService.findOneByEmail(email).catch(() => null);
+      console.log(`Attempting to validate user with email: ${email}`);
+      
+      const user = await this.usersService.findOneByEmail(email).catch((err) => {
+        console.error('Error finding user:', err);
+        return null;
+      });
+      
       if (!user) {
-        return null;
+        console.log(`No user found with email: ${email}`);
+        throw new UnauthorizedException('Invalid email or password');
       }
 
+      console.log(`User found, comparing passwords for user: ${email}`);
       const isMatch = await bcrypt.compare(pass, user.password);
+      
       if (!isMatch) {
-        return null;
+        console.log(`Password mismatch for user: ${email}`);
+        throw new UnauthorizedException('Invalid email or password');
       }
 
+      console.log(`Password match successful for user: ${email}`);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user.toObject();
       return result;
     } catch (error) {
-      console.error('Error validating user:', error);
-      return null;
+      console.error('Error in validateUser:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Authentication failed');
     }
   }
 
@@ -51,22 +65,32 @@ export class AuthService {
    * @returns Object containing the access token and user information
    */
   async login(user: Omit<User, 'password'>): Promise<LoginResponse> {
-    const payload = {
-      email: user.email,
-      sub: user._id,
-      role: user.role,
-    };
-
-    const token = await this.jwtService.signAsync(payload);
-    return {
-      access_token: token,
-      user: {
-        _id: (user._id as Types.ObjectId).toString(),
-        name: user.name,
+    try {
+      console.log(`Generating token for user: ${user.email}`);
+      
+      const payload = {
         email: user.email,
+        sub: user._id,
         role: user.role,
-      },
-    };
+      };
+
+      console.log('JWT payload:', payload);
+      const token = await this.jwtService.signAsync(payload);
+      console.log('Token generated successfully');
+
+      return {
+        access_token: token,
+        user: {
+          _id: (user._id as Types.ObjectId).toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      };
+    } catch (error) {
+      console.error('Error in login:', error);
+      throw new UnauthorizedException('Failed to generate authentication token');
+    }
   }
 
   /**

@@ -1,17 +1,22 @@
 FROM node:18-alpine AS builder
 
+# Build arguments
+ARG NODE_ENV=production
+ARG REACT_APP_API_URL
+
+# Set environment variables
+ENV NODE_ENV=${NODE_ENV}
+ENV REACT_APP_API_URL=${REACT_APP_API_URL}
+
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 
-# Copy source code
+# Copy source code and environment files
 COPY . .
-
-# Set environment variable for production build
-ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=${REACT_APP_API_URL}
+COPY .env* ./
 
 # Build the application
 RUN npm run build
